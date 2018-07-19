@@ -1,0 +1,47 @@
+<?php
+
+/*
+ * hook_help()
+ */
+
+use Drupal\Core\Field\BaseFieldDefinition;
+
+function fd_taxonomy_help($path, $arg)
+{
+    switch ($path) {
+        case 'admin/help#fd_taxonomy': return 'this is a text for fd_taxonomy';
+    }
+}
+
+/*
+ * hook_entity_base_field_info
+ */
+function fd_taxonomy_entity_base_field_info($entity_type)
+{
+    if ($entity_type->id() == 'taxonomy_term') {
+        $fields = [];
+        $fields['group_id'] = BaseFieldDefinition::create('integer')
+            ->setLabel(t('平台编号'))
+            ->setDescription(t('Group ID:所属平台编号'))
+            ->setDisplayOptions('form', [
+                'type' => 'string_textfield',
+                'weight' => 4,
+            ])
+            ->setDisplayConfigurable('form', TRUE)
+            ->setDisplayConfigurable('view', TRUE);
+        $fields['module'] = BaseFieldDefinition::create('string')
+            ->setLabel(t('内容分类'))
+            ->setDescription(t('module:所属的类型-article/media/question'))
+            ->setSettings([
+                'max_length' => 50,
+                'text_processing' => 0,
+            ])
+            ->setDisplayOptions('form', [
+                'type' => 'string_textfield',
+                'weight' => 4,
+            ])
+            ->setDisplayConfigurable('form', TRUE)
+            ->setDisplayConfigurable('view', TRUE);
+        return $fields;
+    }
+}

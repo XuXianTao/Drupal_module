@@ -1,0 +1,5 @@
+name: fd_taxonomy
+description: A custom taxonomy will be created with some extra fields.
+package: Custom
+type: module
+core: 8.x
