@@ -1,0 +1,15 @@
+
+# contact_name menu items definition
+entity.suggestion.collection:
+  title: '服务建议'
+  route_name: entity.suggestion.collection
+  description: '列出 中山七院的服务建议'
+  parent: system.admin_content
+  weight: 100
+
+suggestion.admin.structure.settings:
+  title: '服务建议 配置'
+  description: '配置 中山七院的服务建议'
+  route_name: suggestion.settings
+  parent: system.admin_structure
+  weight: 100

@@ -1,0 +1,5 @@
+name: 'service_suggestion'
+type: module
+description: '中山七院服务建议数据Entity'
+core: 8.x
+package: 'Custom'

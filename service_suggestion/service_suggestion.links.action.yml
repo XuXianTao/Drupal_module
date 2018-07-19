@@ -1,0 +1,5 @@
+entity.suggestion.add_form:
+  route_name: entity.suggestion.add_form
+  title: '添加服务建议'
+  appears_on:
+    - entity.suggestion.collection

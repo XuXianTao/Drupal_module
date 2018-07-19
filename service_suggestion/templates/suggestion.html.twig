@@ -1,0 +1,22 @@
+{#
+/**
+ * @file suggestion.html.twig
+ * Default theme implementation to present contact_name data.
+ *
+ * This template is used when viewing contact_name pages.
+ *
+ *
+ * Available variables:
+ * - content: A list of content items. Use 'content' to print all content, or
+ * - attributes: HTML attributes for the container element.
+ *
+ * @see template_preprocess_suggestion()
+ *
+ * @ingroup themeable
+ */
+#}
+<div{{ attributes.addClass('suggestion') }}>
+  {% if content %}
+    {{- content -}}
+  {% endif %}
+</div>

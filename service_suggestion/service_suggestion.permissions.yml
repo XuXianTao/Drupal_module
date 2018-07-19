@@ -1,0 +1,33 @@
+add suggestion entities:
+  title: 'Create new 服务建议[七院] entities'
+
+administer suggestion entities:
+  title: 'Administer 服务建议[七院] entities'
+  description: 'Allow to access the administration form to configure suggestion entities.'
+  restrict access: true
+
+delete suggestion entities:
+  title: 'Delete 服务建议[七院] entities'
+
+edit suggestion entities:
+  title: 'Edit 服务建议[七院] entities'
+
+view published suggestion entities:
+  title: 'View published 服务建议[七院] entities'
+
+view unpublished suggestion entities:
+  title: 'View unpublished 服务建议[七院] entities'
+
+view all suggestion revisions:
+  title: 'View all 服务建议[七院] revisions'
+
+revert all suggestion revisions:
+  title: 'Revert all 服务建议[七院] revisions'
+  description: 'Role requires permission <em>view contact_name revisions</em> and <em>edit rights</em> for suggestion entities in question or <em>administer suggestion entities</em>.'
+
+delete all suggestion revisions:
+  title: 'Delete all revisions'
+  description: 'Role requires permission to <em>view contact_name revisions</em> and <em>delete rights</em> for suggestion entities in question or <em>administer suggestion entities</em>.'
+
+access captcha:
+  title: '访问验证码\校验验证码'

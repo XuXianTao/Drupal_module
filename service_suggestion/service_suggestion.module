@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * @file
+ * Contains service_suggestion.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function service_suggestion_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the service_suggestion module.
+    case 'help.page.service_suggestion':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('中山七院服务建议数据Entity') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function service_suggestion_theme() {
+  return [
+    'service_suggestion' => [
+      'render element' => 'children',
+    ],
+  ];
+}

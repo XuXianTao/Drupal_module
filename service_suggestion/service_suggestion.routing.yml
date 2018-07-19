@@ -1,0 +1,19 @@
+captcha.generate:
+  path: '/captcha/generate'
+  defaults:
+    _controller: 'Drupal\service_suggestion\Controller\CaptchaController::generate'
+  requirements:
+    _permission: 'access captcha'
+captcha.add:
+  path: '/captcha/add_suggestion'
+  defaults:
+    _controller: 'Drupal\service_suggestion\Controller\CaptchaController::add_suggestion'
+  requirements:
+    _permission: 'access captcha'
+captcha.check:
+  path: '/captcha/check'
+  defaults:
+    _controller: 'Drupal\service_suggestion\Controller\CaptchaController::check'
+  requirements:
+    _permission: 'access captcha'
+
