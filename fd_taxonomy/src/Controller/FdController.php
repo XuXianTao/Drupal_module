@@ -2,7 +2,10 @@
 
 namespace Drupal\fd_taxonomy\Controller;
 
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\AppendCommand;
+use Drupal\Core\Ajax\BaseCommand;
 use Drupal\Core\Ajax\HtmlCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Controller\ControllerBase;
@@ -15,7 +18,6 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class FdController extends ControllerBase
 {
-
     /**
      * Import.
      * Changing the sql in fd_category to taxonomy_term_field_data
@@ -40,8 +42,13 @@ class FdController extends ControllerBase
 
     public function filterCallback(&$form, FormStateInterface &$form_state)
     {
+        return $form;
+        /*
         $response = new AjaxResponse();
-        $response->addCommand(new ReplaceCommand('#fd_taxonomy-terms-list', $form));
+        $response->addCommand(new AppendCommand('#fd_taxonomy-terms-list', $form));
+        //$response->addCommand(new AppendCommand('#fd_taxonomy-terms-list', $form['terms']));
+        //$response->addCommand(new AppendCommand('#fd_taxonomy-terms-list', $form['backups']));
         return $response;
+        */
     }
 }
