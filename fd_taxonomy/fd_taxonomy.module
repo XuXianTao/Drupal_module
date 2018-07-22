@@ -4,16 +4,24 @@
  * hook_help()
  */
 
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Url;
+use Drupal\taxonomy\VocabularyInterface;
 
+define('FD_TAX', 'fd_category');
+define('FD_FORM_ID', 'fd_taxonomy-terms-list');
 function fd_taxonomy_help($path, $arg)
 {
     switch ($path) {
-        case 'admin/help#fd_taxonomy': return 'this is a text for fd_taxonomy';
+        case 'admin/help#fd_taxonomy':
+            return 'this is a text for fd_taxonomy';
     }
 }
 
 /*
+ * 为taxonomy添加两个字段group_id\module
  * hook_entity_base_field_info
  */
 function fd_taxonomy_entity_base_field_info($entity_type)
@@ -44,4 +52,324 @@ function fd_taxonomy_entity_base_field_info($entity_type)
             ->setDisplayConfigurable('view', TRUE);
         return $fields;
     }
+}
+/*
+ * $origin     array    要被插入的原始数组
+ * $offset     integer  插入位置下标
+ * $kv         array    要插入的键值对
+ */
+function array_insert_with_kv(&$origin, $offset, $kv)
+{
+    $origin_last = array_splice($origin, $offset);
+    $origin_last = array_merge($kv, $origin_last);
+    $origin = array_merge($origin, $origin_last);
+}
+
+/*
+ * hook_form_alter
+ */
+function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$form_state, &$form_id)
+{
+    /*
+     * 修改针对分类fd_category的表单显示
+     */
+    //dpm();
+    if ($form_id == 'taxonomy_overview_terms' && $form_state->getStorage()['taxonomy']['vocabulary']->id() == FD_TAX) {
+        /*
+         * 获取要显示的数据
+         * $taxonomy_term          array               全部分类
+         * $result_terms           array               要显示的分类
+         * $taxonomy_vocabulary    VocabularyInterface 在原buildForm被放入['taxonomy', 'vocabulary']中的VocabularyInterface
+         */
+        $taxonomy_term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree(FD_TAX, 0, NULL, TRUE);
+        $result_terms = [];
+        $taxonomy_vocabulary = $form_state->get(['taxonomy', 'vocabulary']);
+
+        /*
+         * 确定渲染部分的id->整个表格直接重新渲染(如果只渲染$form[terms]部分会导致'显示每行权重'字体部分重复渲染)
+         */
+        $form['#attributes']['id'] = FD_FORM_ID;
+        /*
+         * 添加表头module到第二个位置
+         */
+        $tmp_header = [
+            'module' => t('Module')
+        ];
+        array_insert_with_kv($form['terms']['#header'], 1, $tmp_header);
+        /*
+         * 初次访问删除原有的分类信息, 保证所有节点构造方法统一
+         */
+        foreach ($form['terms'] as $k => $term_item) {
+            if (preg_match("/^tid:(\d+):(\d+)$/", $k)) {
+                unset($form['terms'][$k]);
+            }
+        }
+
+        /*
+         * 重新构建terms内容
+         * 添加字段group_id内容显示，group_id存在于$taxonomy_term
+         * $group_ids     array     平台编号选项数组收集平台编号                 ->当做select组件的选择项
+         * $term_deltas   array     每个分类tid的个数(正常情况下一个分类一个tid)   ->当做显示的条目的key
+         * $delta         int       要显示的分类个数                           ->当做weight的#delta 范围值
+         */
+        $group_ids = [];
+        $term_deltas = [];
+        $delta = 0;
+        $parent_fields = FALSE;
+        //分页处理参数
+        $page = \Drupal::service('request_stack')->getCurrentRequest()->query->get('page') ?: 0;
+        // Number of terms per page.
+        $page_increment = \Drupal::getContainer()->get('config.factory')->get('taxonomy.settings')->get('terms_per_page_admin');
+        // Elements shown on this page.
+        $page_entries = 0;
+        // Elements at the root level before this page.
+        $before_entries = 0;
+        // Elements at the root level after this page.
+        $after_entries = 0;
+        // Elements at the root level on this page.
+        $root_entries = 0;
+
+        $row_position = 0;
+        $back_step = NULL;
+        $forward_step = 0;
+        // An array of the terms to be displayed on this page.
+        $current_page = [];
+
+        /*
+         * 整理出$group_ids
+         */
+        foreach ($taxonomy_term as $term) {
+            $term_gid = $term->getTypedData()->getProperties()['group_id']->getString();
+            array_push($group_ids, $term_gid);
+        }
+        $group_ids_unique = array_unique($group_ids);
+        sort($group_ids_unique);
+        $group_ids_unique = array_combine($group_ids_unique, $group_ids_unique);
+
+        /*
+         * 添加工具条过滤
+         */
+        $tmp_array = [
+            'filter' => [
+                '#type' => 'select',
+                '#title' => 'group_id',
+                '#options' => $group_ids_unique,
+                '#default_value' => array_values($group_ids_unique)[0],
+                '#ajax' => [
+                    'callback' => 'Drupal\fd_taxonomy\Controller\FdController::filterCallback',
+                    'wrapper' => FD_FORM_ID
+                ]
+            ]
+        ];
+        $form = array_merge($tmp_array, $form);
+
+        /*
+         * 过滤显示内容
+         */
+        $p_gid = $form_state->getValue('filter', array_values($group_ids_unique)[0]);
+        // 得到显示的个数,确定要显示的分类内容
+        foreach ($taxonomy_term as $term) {
+            $term_gid = $term->getTypedData()->getProperties()['group_id']->getString();
+            if ($p_gid == $term_gid) {
+                array_push($result_terms, $term);
+                $delta++;
+            }
+        }
+        //循环处理分页变量
+        $tree_index = 0;
+        $tree = $result_terms;
+        foreach ($result_terms as $term) {
+            if ($page && ($page * $page_increment) > $before_entries && !isset($back_step)) {
+                $before_entries++;
+                continue;
+            } // Count entries after the current page.
+            elseif ($page_entries > $page_increment && isset($complete_tree)) {
+                $after_entries++;
+                continue;
+            }
+
+            if (isset($term->depth) && ($term->depth > 0) && !isset($back_step)) {
+                $back_step = 0;
+                while ($pterm = $tree[--$tree_index]) {
+                    $before_entries--;
+                    $back_step++;
+                    if ($pterm->depth == 0) {
+                        $tree_index--;
+                        // Jump back to the start of the root level parent.
+                        continue 2;
+                    }
+                }
+            }
+            $back_step = isset($back_step) ? $back_step : 0;
+
+            // Continue rendering the tree until we reach the a new root item.
+            if ($page_entries >= $page_increment + $back_step + 1 && $term->depth == 0 && $root_entries > 1) {
+                $complete_tree = TRUE;
+                // This new item at the root level is the first item on the next page.
+                $after_entries++;
+                continue;
+            }
+            if ($page_entries >= $page_increment + $back_step) {
+                $forward_step++;
+            }
+
+            // Finally, if we've gotten down this far, we're rendering a term on this
+            // page.
+            $page_entries++;
+            $term_deltas[$term->id()] = isset($term_deltas[$term->id()]) ? $term_deltas[$term->id()] + 1 : 0;
+            $key = 'tid:' . $term->id() . ':' . $term_deltas[$term->id()];
+
+            // Keep track of the first term displayed on this page.
+            if ($page_entries == 1) {
+                $form['#first_tid'] = $term->id();
+            }
+            // Keep a variable to make sure at least 2 root elements are displayed.
+            if ($term->parents[0] == 0) {
+                $root_entries++;
+            }
+            $current_page[$key] = $term;
+            $tree_index++;
+        }
+        // Because we didn't use a pager query, set the necessary pager variables.
+        $total_entries = $before_entries + $page_entries + $after_entries;
+        $pager_total_items[0] = $total_entries;
+        $pager_page_array[0] = $page;
+        $pager_total[0] = ceil($total_entries / $page_increment);
+
+        // If this form was already submitted once, it's probably hit a validation
+        // error. Ensure the form is rebuilt in the same order as the user
+        // submitted.
+
+        /*
+        $user_input = $form_state->getUserInput();
+        if (!empty($user_input)) {
+            // Get the POST order.
+            $order = array_flip(array_keys($user_input['terms']));
+            // Update our form with the new order.
+            $current_page = array_merge($order, $current_page);
+            foreach ($current_page as $key => $term) {
+                // Verify this is a term for the current page and set at the current
+                // depth.
+                if (is_array($user_input['terms'][$key]) && is_numeric($user_input['terms'][$key]['term']['tid'])) {
+                    $current_page[$key]->depth = $user_input['terms'][$key]['term']['depth'];
+                }
+                else {
+                    unset($current_page[$key]);
+                }
+            }
+        }*/
+
+        $errors = $form_state->getErrors();
+        $row_position = 0;
+
+
+        // Only allow access to changing weights if the user has update access for
+        // all terms.
+        $change_weight_access = AccessResult::allowed();
+        foreach ($current_page as $key => $term) {
+            $term_module = $term->getTypedData()->getProperties()['module']->getString();
+            $form['terms'][$key] = [
+                'term' => [],
+                'module' => [
+                    '#type' => 'item',
+                    '#tilte' => $term_module,
+                    '#value' => $term_module
+                ],
+                'operations' => [],
+                'weight' => [],
+            ];
+
+            /** @var $term \Drupal\Core\Entity\EntityInterface */
+            $form['terms'][$key]['#term'] = $term;
+            $indentation = [];
+            if (isset($term->depth) && $term->depth > 0) {
+                $indentation = [
+                    '#theme' => 'indentation',
+                    '#size' => $term->depth,
+                ];
+            }
+            $form['terms'][$key]['term'] = [
+                '#prefix' => !empty($indentation) ? \Drupal::service('renderer')->render($indentation) : '',
+                '#type' => 'link',
+                '#title' => $term->getName(),
+                '#url' => $term->urlInfo(),
+            ];
+            if ($taxonomy_vocabulary->getHierarchy() != VocabularyInterface::HIERARCHY_MULTIPLE && count($tree) > 1) {
+                $parent_fields = TRUE;
+                $form['terms'][$key]['term']['tid'] = [
+                    '#type' => 'hidden',
+                    '#value' => $term->id(),
+                    '#attributes' => [
+                        'class' => ['term-id'],
+                    ],
+                ];
+                $form['terms'][$key]['term']['parent'] = [
+                    '#type' => 'hidden',
+                    // Yes, default_value on a hidden. It needs to be changeable by the
+                    // javascript.
+                    '#default_value' => $term->parents[0],
+                    '#attributes' => [
+                        'class' => ['term-parent'],
+                    ],
+                ];
+                $form['terms'][$key]['term']['depth'] = [
+                    '#type' => 'hidden',
+                    // Same as above, the depth is modified by javascript, so it's a
+                    // default_value.
+                    '#default_value' => $term->depth,
+                    '#attributes' => [
+                        'class' => ['term-depth'],
+                    ],
+                ];
+            }
+            $update_access = $term->access('update', NULL, TRUE);
+            $change_weight_access = $change_weight_access->andIf($update_access);
+
+            if ($update_access->isAllowed()) {
+                $form['terms'][$key]['weight'] = [
+                    '#type' => 'weight',
+                    '#delta' => $delta,
+                    '#title' => t('Weight for added term'),
+                    '#title_display' => 'invisible',
+                    '#default_value' => $term->getWeight(),
+                    '#attributes' => ['class' => ['term-weight']],
+                ];
+            }
+            $list_builder = EntityListBuilder::createInstance(\Drupal::getContainer(), $term->getEntityType());
+            if ($operations = $list_builder->getOperations($term)) {
+                $form['terms'][$key]['operations'] = [
+                    '#type' => 'operations',
+                    '#links' => $operations,
+                ];
+
+            }
+            $form['terms'][$key]['#attributes']['class'] = [];
+            if ($parent_fields) {
+                $form['terms'][$key]['#attributes']['class'][] = 'draggable';
+            }
+
+            // Add classes that mark which terms belong to previous and next pages.
+            if ($row_position < $back_step || $row_position >= $page_entries - $forward_step) {
+                $form['terms'][$key]['#attributes']['class'][] = 'taxonomy-term-preview';
+            }
+
+            if ($row_position !== 0 && $row_position !== count($tree) - 1) {
+                if ($row_position == $back_step - 1 || $row_position == $page_entries - $forward_step - 1) {
+                    $form['terms'][$key]['#attributes']['class'][] = 'taxonomy-term-divider-top';
+                } elseif ($row_position == $back_step || $row_position == $page_entries - $forward_step) {
+                    $form['terms'][$key]['#attributes']['class'][] = 'taxonomy-term-divider-bottom';
+                }
+            }
+
+            // Add an error class if this row contains a form error.
+            foreach ($errors as $error_key => $error) {
+                if (strpos($error_key, $key) === 0) {
+                    $form['terms'][$key]['#attributes']['class'][] = 'error';
+                }
+            }
+            $row_position++;
+        }
+    }
+    //dump($form);
+    return $form;
 }

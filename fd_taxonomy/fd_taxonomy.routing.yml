@@ -1,0 +1,8 @@
+
+fd_taxonomy.import_fd_sql_controller_import:
+  path: '/fd_taxonomy/import'
+  defaults:
+    _controller: '\Drupal\fd_taxonomy\Controller\FdController::import'
+    _title: 'import'
+  requirements:
+    _permission: 'access content'
