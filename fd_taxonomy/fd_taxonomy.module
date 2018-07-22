@@ -12,6 +12,8 @@ use Drupal\taxonomy\VocabularyInterface;
 
 define('FD_TAX', 'fd_category');
 define('FD_FORM_ID', 'fd_taxonomy-terms-list');
+define('MODULE_OFFSET', 1);
+
 function fd_taxonomy_help($path, $arg)
 {
     switch ($path) {
@@ -70,10 +72,10 @@ function array_insert_with_kv(&$origin, $offset, $kv)
  */
 function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$form_state, &$form_id)
 {
+    //存在bug：切换到其他平台再切换回去，修改分类父子级提示未定义数组? 时有时无
     /*
      * 修改针对分类fd_category的表单显示
      */
-    //dpm();
     if ($form_id == 'taxonomy_overview_terms' && $form_state->getStorage()['taxonomy']['vocabulary']->id() == FD_TAX) {
         /*
          * 获取要显示的数据
@@ -95,7 +97,7 @@ function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$f
         $tmp_header = [
             'module' => t('Module')
         ];
-        array_insert_with_kv($form['terms']['#header'], 1, $tmp_header);
+        array_insert_with_kv($form['terms']['#header'], MODULE_OFFSET, $tmp_header);
         /*
          * 初次访问删除原有的分类信息, 保证所有节点构造方法统一
          */
@@ -167,7 +169,10 @@ function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$f
          * 过滤显示内容
          */
         $p_gid = $form_state->getValue('filter', array_values($group_ids_unique)[0]);
-        // 得到显示的个数,确定要显示的分类内容
+
+        /*
+         * 得到显示的个数,确定要显示的分类内容
+         */
         foreach ($taxonomy_term as $term) {
             $term_gid = $term->getTypedData()->getProperties()['group_id']->getString();
             if ($p_gid == $term_gid) {
@@ -239,14 +244,18 @@ function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$f
         // If this form was already submitted once, it's probably hit a validation
         // error. Ensure the form is rebuilt in the same order as the user
         // submitted.
-
-        /*
+//获取提交状态，由于没有其他group_id的分类在$user_input中，这里无意义？$user_input是切换前的平台分类，$current_page是切换后的
+/*
         $user_input = $form_state->getUserInput();
         if (!empty($user_input)) {
             // Get the POST order.
             $order = array_flip(array_keys($user_input['terms']));
+            dpm($order);
             // Update our form with the new order.
+            // 'tid:22:0' => $terms
+            // 无必要？$key值已经指定。 重排'tid:xx:0'？
             $current_page = array_merge($order, $current_page);
+            dpm($current_page);
             foreach ($current_page as $key => $term) {
                 // Verify this is a term for the current page and set at the current
                 // depth.
@@ -257,8 +266,8 @@ function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$f
                     unset($current_page[$key]);
                 }
             }
-        }*/
-
+        }
+*/
         $errors = $form_state->getErrors();
         $row_position = 0;
 
@@ -268,17 +277,23 @@ function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$f
         $change_weight_access = AccessResult::allowed();
         foreach ($current_page as $key => $term) {
             $term_module = $term->getTypedData()->getProperties()['module']->getString();
+            $term_gid = $term->getTypedData()->getProperties()['group_id']->getString();
             $form['terms'][$key] = [
                 'term' => [],
-                'module' => [
-                    '#type' => 'item',
-                    '#tilte' => $term_module,
-                    '#value' => $term_module
-                ],
                 'operations' => [],
                 'weight' => [],
             ];
-
+            $tmp =[
+                'module' => [
+                    '#type' => 'item',
+                    '#title' => $term_module,
+                    'group_id' => [
+                        '#type'  => 'hidden',
+                        '#value' => $term_gid
+                    ]
+                ]
+            ];
+            array_insert_with_kv($form['terms'][$key],MODULE_OFFSET, $tmp);
             /** @var $term \Drupal\Core\Entity\EntityInterface */
             $form['terms'][$key]['#term'] = $term;
             $indentation = [];

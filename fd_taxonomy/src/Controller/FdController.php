@@ -40,8 +40,9 @@ class FdController extends ControllerBase
 
     public function filterCallback(&$form, FormStateInterface &$form_state)
     {
-        $response = new AjaxResponse();
-        $response->addCommand(new ReplaceCommand('#fd_taxonomy-terms-list', $form));
-        return $response;
+        return $form;
+//        $response = new AjaxResponse();
+//        $response->addCommand(new ReplaceCommand('#fd_taxonomy-terms-list', $form));
+//        return $response;
     }
 }
