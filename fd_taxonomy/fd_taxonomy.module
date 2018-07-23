@@ -18,7 +18,7 @@ function fd_taxonomy_help($path, $arg)
 {
     switch ($path) {
         case 'admin/help#fd_taxonomy':
-            return 'this is a text for fd_taxonomy';
+            return t('在配置>内容写作下进行初始化后即可使用');
     }
 }
 
@@ -72,10 +72,11 @@ function array_insert_with_kv(&$origin, $offset, $kv)
  */
 function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$form_state, &$form_id)
 {
-    //存在bug：切换到其他平台再切换回去，修改分类父子级提示未定义数组? 时有时无
+    //存在bug：数据表条目数量过多的时候分页，导致重新加载的buildForm()中$form['terms']数量不全(有分页过滤)，所以自己的提交到了overviewterms中的userinfo的order中merge之后空的term会merge导致$current_page会出现数字项(序号)
     /*
      * 修改针对分类fd_category的表单显示
      */
+
     if ($form_id == 'taxonomy_overview_terms' && $form_state->getStorage()['taxonomy']['vocabulary']->id() == FD_TAX) {
         /*
          * 获取要显示的数据
@@ -83,7 +84,8 @@ function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$f
          * $result_terms           array               要显示的分类
          * $taxonomy_vocabulary    VocabularyInterface 在原buildForm被放入['taxonomy', 'vocabulary']中的VocabularyInterface
          */
-        $taxonomy_term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree(FD_TAX, 0, NULL, TRUE);
+        $taxonomy_term = \Drupal::entityManager()->getStorage('taxonomy_term')->loadTree(FD_TAX, 0, NULL, TRUE);
+        if (empty($taxonomy_term)) return $form;
         $result_terms = [];
         $taxonomy_vocabulary = $form_state->get(['taxonomy', 'vocabulary']);
 
@@ -223,7 +225,6 @@ function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$f
             $page_entries++;
             $term_deltas[$term->id()] = isset($term_deltas[$term->id()]) ? $term_deltas[$term->id()] + 1 : 0;
             $key = 'tid:' . $term->id() . ':' . $term_deltas[$term->id()];
-
             // Keep track of the first term displayed on this page.
             if ($page_entries == 1) {
                 $form['#first_tid'] = $term->id();
@@ -245,17 +246,18 @@ function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$f
         // error. Ensure the form is rebuilt in the same order as the user
         // submitted.
 //获取提交状态，由于没有其他group_id的分类在$user_input中，这里无意义？$user_input是切换前的平台分类，$current_page是切换后的
-/*
+
         $user_input = $form_state->getUserInput();
+        //dpm($user_input);
         if (!empty($user_input)) {
             // Get the POST order.
             $order = array_flip(array_keys($user_input['terms']));
-            dpm($order);
+            //dpm($order);
             // Update our form with the new order.
             // 'tid:22:0' => $terms
             // 无必要？$key值已经指定。 重排'tid:xx:0'？
             $current_page = array_merge($order, $current_page);
-            dpm($current_page);
+            //dpm($current_page);
             foreach ($current_page as $key => $term) {
                 // Verify this is a term for the current page and set at the current
                 // depth.
@@ -267,7 +269,7 @@ function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$f
                 }
             }
         }
-*/
+
         $errors = $form_state->getErrors();
         $row_position = 0;
 
@@ -384,7 +386,45 @@ function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$f
             }
             $row_position++;
         }
+
+        \Drupal::service('renderer')->addCacheableDependency($form['terms'], $change_weight_access);
+        if ($change_weight_access->isAllowed()) {
+            if ($parent_fields) {
+                $form['terms']['#tabledrag'][] = [
+                    'action' => 'match',
+                    'relationship' => 'parent',
+                    'group' => 'term-parent',
+                    'subgroup' => 'term-parent',
+                    'source' => 'term-id',
+                    'hidden' => FALSE,
+                ];
+                $form['terms']['#tabledrag'][] = [
+                    'action' => 'depth',
+                    'relationship' => 'group',
+                    'group' => 'term-depth',
+                    'hidden' => FALSE,
+                ];
+                $form['terms']['#attached']['library'][] = 'taxonomy/drupal.taxonomy';
+                $form['terms']['#attached']['drupalSettings']['taxonomy'] = [
+                    'backStep' => $back_step,
+                    'forwardStep' => $forward_step,
+                ];
+            }
+            $form['terms']['#tabledrag'][] = [
+                'action' => 'order',
+                'relationship' => 'sibling',
+                'group' => 'term-weight',
+            ];
+        }
+
     }
     //dump($form);
     return $form;
+}
+
+/*
+ * hook_ENTITY_TYPE_prepare_form
+ */
+function fd_taxonomy_ajax_render_alter(array &$data) {
+
 }

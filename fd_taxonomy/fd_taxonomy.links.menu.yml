@@ -1,0 +1,7 @@
+# 初始化界面
+fd_taxonomy.init:
+  title: 'fd_category 初始化'
+  route_name: fd_taxonomy.init_import
+  description: '初始化fd_category分类项'
+  parent: system.admin_config_content
+  weight: 100

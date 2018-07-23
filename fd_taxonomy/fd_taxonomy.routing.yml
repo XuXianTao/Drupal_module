@@ -1,8 +1,7 @@
-
-fd_taxonomy.import_fd_sql_controller_import:
-  path: '/fd_taxonomy/import'
+fd_taxonomy.init_import:
+  path: '/admin/config/content/fd_taxonomy'
   defaults:
-    _controller: '\Drupal\fd_taxonomy\Controller\FdController::import'
-    _title: 'import'
+    _form: '\Drupal\fd_taxonomy\Form\FdSettingForm'
+    _title: '初始化fd_category'
   requirements:
-    _permission: 'access content'
+    _permission: 'access fd_taxonomy init'

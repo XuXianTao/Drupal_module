@@ -1,5 +1,5 @@
 name: fd_taxonomy
-description: A custom taxonomy will be created with some extra fields.
+description: 为分了新增group_id\module字段，在配置>内容写作下进行初始化后即可使用，在分类fd_category下可以按照不同group_id访问
 package: Custom
 type: module
 core: 8.x
