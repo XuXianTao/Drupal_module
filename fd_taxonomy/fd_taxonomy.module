@@ -10,6 +10,11 @@ use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Url;
 use Drupal\taxonomy\VocabularyInterface;
 
+/*
+ * FD_TAX         Vocabulary id
+ * FD_FORM_ID     渲染对象id
+ * MODULE_OFFSET  模块字段的位置
+ */
 define('FD_TAX', 'fd_category');
 define('FD_FORM_ID', 'fd_taxonomy-terms-list');
 define('MODULE_OFFSET', 1);
@@ -119,7 +124,7 @@ function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$f
             ],
             'backups' => [
                 '#type' => 'table',
-                'value' => [],
+                '#value' => [],
             ]
         ];
         $form = array_merge($tmp_array, $form);
@@ -138,66 +143,64 @@ function fd_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$f
          */
         $p_gid = $form_state->getValue('filter', array_values($group_ids_unique)[0]);
 
-        //由于第一次已经赋值backups，所以通过这个判断当前状态
-        $is_first = (boolean)empty($form_state->get('backups'));
-        //初次访问
-        $form_backups = $is_first ? [] : $form_state->get('backups');
+        dpm('--------group_id: ' . $p_gid . '----------');
+
         /*
-         * 初次设置时为每个分组设置module 和 group_id(hidden)
-         * 备份全部小组的信息到backup 字段下
+         * 初次设置时为每个分组设置 module 和 group_id(hidden)然后
+         * 删除要显示全部分类
          */
+        $count4test = 0;
+        $count4test2 =0;
         foreach ($form['terms'] as $k => $form_item) {
             if (preg_match("/^tid:(\d+):(\d+)$/", $k)) {
-                if ($is_first) {
-                    $tmp = [];
-                    $form_item_tid = $form_item['term']['tid']['#value'];
-                    foreach ($taxonomy_term as $term) {
-                        $term_tid = $term->id();
-                        if ($term_tid == $form_item_tid) {
-                            $term_module = $term->getTypedData()->getProperties()['module']->getString();
-                            $term_gid = $term->getTypedData()->getProperties()['group_id']->getString();
-                            $tmp = [
-                                'module' => [
-                                    '#type' => 'item',
-                                    '#title' => $term_module,
-                                    'group_id' => [
-                                        '#type' => 'hidden',
-                                        '#value' => $term_gid
-                                    ]
-                                ],
-                            ];
-                            break;
-                        }
+                $count4test++;
+                $count4test2++;
+                $tmp = [];
+                $form_item_tid = $form_item['term']['tid']['#value'];
+                foreach ($taxonomy_term as $term) {
+                    $term_tid = $term->id();
+                    if ($term_tid == $form_item_tid) {
+                        $term_module = $term->getTypedData()->getProperties()['module']->getString();
+                        $term_gid = $term->getTypedData()->getProperties()['group_id']->getString();
+                        $tmp = [
+                            'module' => [
+                                '#type' => 'item',
+                                '#title' => $term_module,
+                                'group_id' => [
+                                    '#type' => 'hidden',
+                                    '#value' => $term_gid
+                                ]
+                            ],
+                        ];
+                        break;
                     }
-                    array_insert_with_kv($form['terms'][$k], MODULE_OFFSET, $tmp);
-                    //全部备份移动到backups
-                    $form_backups = array_merge($form_backups, [$k => $form['terms'][$k]]);
                 }
-                unset($form['terms'][$k]);
-            }
-        }
-        if ($is_first) {
-            $form_state->set(['backups'], $form_backups);
-            dpm('backups in $form_state is set, the number is ' . count($form_state->get('backups')));
-        }
-        dpm('now_backups: ' . count($form_state->get('backups')));
-        /*
-         * 切换之后在备份中查找该平台下的分类，赋值到$form['terms']前台显示
-         */
-        foreach ($form_backups as $k => $back_item) {
-            if (preg_match("/^tid:(\d+):(\d+)$/", $k)) {
-                $item_gid = $back_item['module']['group_id']['#value'];
-                if ($item_gid == $p_gid) {
-                    $form['terms'][$k] = $back_item;
+                array_insert_with_kv($form_item, MODULE_OFFSET, $tmp);
+                //删除其他平台节点
+                if ($form_item['module']['group_id']['#value'] != $p_gid) {
+                    $count4test--;
+                    unset($form['terms'][$k]);
                 }
             }
         }
+        dpm('$form[\'terms\'] number: '. $count4test2);
+        dpm('shown_terms: '. $count4test);
+
+        //$form_state->setSubmitHandlers();
+        //$form['#']
+        $form_state->setSubmitHandlers(['mySubmitFunction']);
+        //dump($form);
+        //dpm($form_state->getUserInput(),'userinput');
         //dpm(($form_backups));
         //dpm(count($form_backups));
         //$form_state->set(['test'], ['1213'=> '2133213']);
         //dpm('after'.$form_state->get(['test'])['1213']);
-        dpm('-----' . $p_gid);
-
+        dpm('-----------------');
     }
     return $form;
+}
+
+function mySubmitFunction(&$form, \Drupal\Core\Form\FormState &$form_state)
+{
+    $form_state->setUserInput([]);
 }
