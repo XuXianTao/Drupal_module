@@ -1,0 +1,27 @@
+# Fd tag routing definition
+fd_tag.settings_tab:
+  route_name: fd_tag.settings
+  title: 'Settings'
+  base_route: fd_tag.settings
+
+entity.fd_tag.canonical:
+  route_name: entity.fd_tag.canonical
+  base_route: entity.fd_tag.canonical
+  title: 'View'
+
+entity.fd_tag.edit_form:
+  route_name: entity.fd_tag.edit_form
+  base_route: entity.fd_tag.canonical
+  title: 'Edit'
+
+entity.fd_tag.version_history:
+  route_name: entity.fd_tag.version_history
+  base_route: entity.fd_tag.canonical
+  title: 'Revisions'
+
+entity.fd_tag.delete_form:
+  route_name:  entity.fd_tag.delete_form
+  base_route:  entity.fd_tag.canonical
+  title: Delete
+  weight: 10
+

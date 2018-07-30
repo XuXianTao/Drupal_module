@@ -1,0 +1,14 @@
+{
+  "name": "drupal/fd_tags",
+  "type": "drupal-module",
+  "description": "An entity to help manager the tags in fd",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/fd_tags",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/fd_tags",
+    "source": "http://cgit.drupalcode.org/fd_tags"
+  },
+  "require": { }
+}

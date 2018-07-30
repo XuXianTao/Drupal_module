@@ -1,0 +1,15 @@
+
+# Fd tag menu items definition
+entity.fd_tag.collection:
+  title: 'Fd tags list'
+  route_name: entity.fd_tag.collection
+  description: 'List Fd tag entities'
+  parent: system.admin_content
+  weight: 100
+
+fd_tag.admin.structure.settings:
+  title: 'Fd tags settings'
+  description: 'Configure Fd tag entities'
+  route_name: fd_tag.settings
+  parent: system.admin_structure
+  weight: 100

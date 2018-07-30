@@ -1,0 +1,30 @@
+add fd tag entities:
+  title: 'Create new Fd tag entities'
+
+administer fd tag entities:
+  title: 'Administer Fd tag entities'
+  description: 'Allow to access the administration form to configure Fd tag entities.'
+  restrict access: true
+
+delete fd tag entities:
+  title: 'Delete Fd tag entities'
+
+edit fd tag entities:
+  title: 'Edit Fd tag entities'
+
+view published fd tag entities:
+  title: 'View published Fd tag entities'
+
+view unpublished fd tag entities:
+  title: 'View unpublished Fd tag entities'
+
+view all fd tag revisions:
+  title: 'View all Fd tag revisions'
+
+revert all fd tag revisions:
+  title: 'Revert all Fd tag revisions'
+  description: 'Role requires permission <em>view Fd tag revisions</em> and <em>edit rights</em> for fd tag entities in question or <em>administer fd tag entities</em>.'
+
+delete all fd tag revisions:
+  title: 'Delete all revisions'
+  description: 'Role requires permission to <em>view Fd tag revisions</em> and <em>delete rights</em> for fd tag entities in question or <em>administer fd tag entities</em>.'

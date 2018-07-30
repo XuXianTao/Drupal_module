@@ -1,0 +1,22 @@
+{#
+/**
+ * @file fd_tag.html.twig
+ * Default theme implementation to present Fd tag data.
+ *
+ * This template is used when viewing Fd tag pages.
+ *
+ *
+ * Available variables:
+ * - content: A list of content items. Use 'content' to print all content, or
+ * - attributes: HTML attributes for the container element.
+ *
+ * @see template_preprocess_fd_tag()
+ *
+ * @ingroup themeable
+ */
+#}
+<div{{ attributes.addClass('fd_tag') }}>
+  {% if content %}
+    {{- content -}}
+  {% endif %}
+</div>

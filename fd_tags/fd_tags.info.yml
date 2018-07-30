@@ -1,0 +1,5 @@
+name: 'fd_tags'
+type: module
+description: 'An entity to help manager the tags in fd'
+core: 8.x
+package: 'Taxonomy'

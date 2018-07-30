@@ -1,0 +1,5 @@
+entity.fd_tag.add_form:
+  route_name: entity.fd_tag.add_form
+  title: 'Add Fd tag'
+  appears_on:
+    - entity.fd_tag.collection
