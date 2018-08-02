@@ -113,13 +113,11 @@ class WebformSubmissionListResource extends ResourceBase
         $params = \Drupal::request()->query;
         $limit = $params->get('limit', 10);
         $page = $params->get('page', 0);
-        //? $status = $params->get('status', '');
         $search = $params->get('search', '');
         $stick = $params->get('sticky');
         $locked = $params->get('locked');
         $in_draft = $params->get('in_draft');
         $only_id = $params->get('only_id');
-        //? $type = $params->get('type');
 
         $results = [];
         /**

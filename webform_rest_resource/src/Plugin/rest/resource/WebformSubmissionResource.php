@@ -6,6 +6,7 @@ use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\rest\ModifiedResourceResponse;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
+use Drupal\webform\Entity\Webform;
 use Drupal\webform\Entity\WebformSubmission;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -19,7 +20,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  *   id = "webform_submission_resource",
  *   label = @Translation("Webform submission resource"),
  *   uri_paths = {
- *     "canonical" = "/api/webform/submission/{sid}"
+ *     "canonical" = "/api/webform/submission/{sid}",
+ *     "https://www.drupal.org/link-relations/create" = "/api/webform/{id}/submission"
  *   }
  * )
  */
@@ -104,7 +106,6 @@ class WebformSubmissionResource extends ResourceBase
             throw new AccessDeniedHttpException();
         }
 
-
         $submission = WebformSubmission::load($sid);
         $sub_data = [];
         $basic_data = [];
@@ -114,4 +115,13 @@ class WebformSubmissionResource extends ResourceBase
         return new ModifiedResourceResponse($result, 200);
     }
 
+    public function post($id)
+    {
+        $input = \Drupal::request()->getContent();
+        $data['data'] = \GuzzleHttp\json_decode($input, true);
+        $data['webform_id'] = $id;
+        $data['webform'] = Webform::load($id);
+        WebformSubmission::create($data)->save();
+        return new ModifiedResourceResponse('The webform submission in' . $id . 'has submitted successfully.');
+    }
 }
