@@ -1,0 +1,9 @@
+name: 'Webform Rest Resource'
+type: module
+description: 'The module built for webform rest resource(without webform node)'
+core: 8.x
+package: 'Custom'
+dependencies:
+  - webform
+  - rest
+  - restui

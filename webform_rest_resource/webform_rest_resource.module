@@ -1,0 +1,109 @@
+<?php
+
+/**
+ * @file
+ * Contains webform_rest_resource.module.
+ */
+
+use Drupal\Core\Database\Database;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\rest\ModifiedResourceResponse;
+use Drupal\webform\Entity\Webform;
+use Drupal\webform\WebformSubmissionStorageInterface;
+
+/**
+ * Implements hook_help().
+ */
+function webform_rest_resource_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the webform_rest_resource module.
+    case 'help.page.webform_rest_resource':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The module built for webform rest resource(without webform node)') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Helper Function used in webform rest resource
+ */
+
+function webform_rest_list_encode(&$elements, &$element_result)
+{
+    foreach ($elements as $element_key => $element_item) {
+        if (!webform_rest_isElementSupported($element_item['#type'])) continue;
+        foreach ($element_item as $k => $v) {
+            if (substr($k, 0, 1) === '#') {
+                $element_result[$element_key][ltrim($k, '#')] = $v;
+            } else {
+                if (empty($element_result[$element_key]['child'])) $element_result[$element_key]['child'] = [];
+                $child_element = [$k => $v];
+                webform_rest_list_encode($child_element, $element_result[$element_key]['child']);
+            }
+        }
+    }
+}
+
+function webform_rest_list_decode(&$input, &$output)
+{
+    foreach ($input as $element_key => $element_item) {
+        if (empty($output[$element_key])) $output[$element_key] = [];
+        foreach ($element_item as $k => $v) {
+            if ($k == 'child') {
+                webform_rest_list_decode($v, $output[$element_key]);
+                continue;
+            } else {
+                $k = '#' . $k;
+                $output[$element_key][$k] = $v;
+            }
+        }
+    }
+}
+
+function webform_rest_isElementSupported($element_type)
+{
+    $supported_elements = webform_rest_supportedElements();
+    return array_key_exists($element_type, $supported_elements);
+}
+
+function webform_rest_supportedElements()
+{
+    return [
+        'textfield' => 'textfield',
+        'textarea' => 'textarea',
+        'checkboxes' => 'checkboxes',
+        'radios' => 'radios',
+        'checkboxes_other' => 'checkboxes_other',
+        'radios_other' => 'radios_other',
+        //----------
+        'webform_wizard_page' => 'webform_wizard_page',
+        'details' => 'details',
+        'checkbox' => 'checkbox'
+    ];
+}
+
+/**
+ * @param $k
+ * @param $submission \Drupal\webform\WebformSubmissionInterface
+ * @param $sub_data
+ * @param $basic_data
+ */
+function webform_rest_submission_data($k, &$submission, &$sub_data, &$basic_data)
+{
+    $sub_data = $submission->getData();
+    $basic_data = [
+        'sid' => $k,
+        'created' => $submission->getCreatedTime(),
+        'completed' => $submission->getCompletedTime(),
+        'changed' => $submission->getChangedTime(),
+        'current_page' => $submission->getCurrentPage(),
+        'remote_addr' => $submission->getRemoteAddr(),
+        'uid' => $submission->getOwnerId(),
+        'locked' => $submission->isLocked(),
+        'sticky' => $submission->isSticky(),
+        'in_draft' => $submission->isDraft()
+    ];
+}
