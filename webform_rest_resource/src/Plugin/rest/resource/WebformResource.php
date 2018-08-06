@@ -25,81 +25,85 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  *   }
  * )
  */
-class WebformResource extends ResourceBase {
+class WebformResource extends ResourceBase
+{
 
-  /**
-   * A current user instance.
-   *
-   * @var \Drupal\Core\Session\AccountProxyInterface
-   */
-  protected $currentUser;
+    /**
+     * A current user instance.
+     *
+     * @var \Drupal\Core\Session\AccountProxyInterface
+     */
+    protected $currentUser;
 
-  protected $storage;
-  /**
-   * Constructs a new WebformResource object.
-   *
-   * @param array $configuration
-   *   A configuration array containing information about the plugin instance.
-   * @param string $plugin_id
-   *   The plugin_id for the plugin instance.
-   * @param mixed $plugin_definition
-   *   The plugin implementation definition.
-   * @param array $serializer_formats
-   *   The available serialization formats.
-   * @param \Psr\Log\LoggerInterface $logger
-   *   A logger instance.
-   * @param \Drupal\Core\Session\AccountProxyInterface $current_user
-   *   A current user instance.
-   */
-  public function __construct(
-    array $configuration,
-    $plugin_id,
-    $plugin_definition,
-    array $serializer_formats,
-    LoggerInterface $logger,
-    AccountProxyInterface $current_user) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $serializer_formats, $logger);
+    protected $storage;
 
-    $this->currentUser = $current_user;
-    $this->storage = \Drupal::entityTypeManager()->getStorage('webform');
-  }
+    /**
+     * Constructs a new WebformResource object.
+     *
+     * @param array $configuration
+     *   A configuration array containing information about the plugin instance.
+     * @param string $plugin_id
+     *   The plugin_id for the plugin instance.
+     * @param mixed $plugin_definition
+     *   The plugin implementation definition.
+     * @param array $serializer_formats
+     *   The available serialization formats.
+     * @param \Psr\Log\LoggerInterface $logger
+     *   A logger instance.
+     * @param \Drupal\Core\Session\AccountProxyInterface $current_user
+     *   A current user instance.
+     */
+    public function __construct(
+        array $configuration,
+        $plugin_id,
+        $plugin_definition,
+        array $serializer_formats,
+        LoggerInterface $logger,
+        AccountProxyInterface $current_user)
+    {
+        parent::__construct($configuration, $plugin_id, $plugin_definition, $serializer_formats, $logger);
 
-  /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static(
-      $configuration,
-      $plugin_id,
-      $plugin_definition,
-      $container->getParameter('serializer.formats'),
-      $container->get('logger.factory')->get('webform_rest_resource'),
-      $container->get('current_user')
-    );
-  }
-
-  /**
-   * Responds to GET requests.
-   *
-   * @param \Drupal\Core\Entity\EntityInterface $entity
-   *   The entity object.
-   *
-   * @return ModifiedResourceResponse
-   *   The HTTP response object.
-   *
-   * @throws \Symfony\Component\HttpKernel\Exception\HttpException
-   *   Throws exception expected.
-   */
-  public function get($id) {
-
-    // You must to implement the logic of your REST Resource here.
-    // Use current user after pass authentication to validate access.
-    if (!$this->currentUser->hasPermission('access content')) {
-      throw new AccessDeniedHttpException();
+        $this->currentUser = $current_user;
+        $this->storage = \Drupal::entityTypeManager()->getStorage('webform');
     }
 
-    return $this->getForm($id);
-  }
+    /**
+     * {@inheritdoc}
+     */
+    public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition)
+    {
+        return new static(
+            $configuration,
+            $plugin_id,
+            $plugin_definition,
+            $container->getParameter('serializer.formats'),
+            $container->get('logger.factory')->get('webform_rest_resource'),
+            $container->get('current_user')
+        );
+    }
+
+    /**
+     * Responds to GET requests.
+     *
+     * @param \Drupal\Core\Entity\EntityInterface $entity
+     *   The entity object.
+     *
+     * @return ModifiedResourceResponse
+     *   The HTTP response object.
+     *
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     *   Throws exception expected.
+     */
+    public function get($id)
+    {
+        // You must to implement the logic of your REST Resource here.
+        // Use current user after pass authentication to validate access.
+        if (!$this->currentUser->hasPermission('access content')) {
+            throw new AccessDeniedHttpException();
+        }
+
+        return $this->get_webform($id);
+    }
 
     public function post()
     {
@@ -171,37 +175,35 @@ class WebformResource extends ResourceBase {
 
         $webform->save();
 
-        return new ModifiedResourceResponse($webform);
+        return new ModifiedResourceResponse($data, 201);
     }
 
     public function delete($id)
     {
         $webform = Webform::load($id);
         if (empty($webform)) {
-            throw new NotFoundHttpException('The webform '. $id . ' is not found.');
+            throw new NotFoundHttpException('The webform ' . $id . ' is not found.');
         }
 
-        //这里提示无效
-        if (!$this->currentUser->hasPermission('restful delete group_webform')) {
+        //
+        if (!$this->currentUser->hasPermission('restful delete webform_resource')) {
             throw new AccessDeniedHttpException();
         }
-
-        /** @var Webform $webform */
         $webform->delete();
-        return new ModifiedResourceResponse('The webform ' . $id . ' deleted successfully.', 200);
+        /** @var Webform $webform */
+        return new ModifiedResourceResponse(null, 204);
     }
-
 
 
     /**Helper Function
      * @param $id string    Webform ID(title)
      * @return ModifiedResourceResponse
      */
-    protected function getForm($id)
+    protected function get_webform($id)
     {
         /** @var Webform $webform */
         $webform = Webform::load($id);
-        if (!$webform) return new ModifiedResourceResponse('The Webform '. $id . ' is not found.', 404);
+        if (!$webform) return new ModifiedResourceResponse('The Webform ' . $id . ' is not found.', 404);
         $elements = $webform->getElementsDecoded();
         $data = [
             'title' => $id,

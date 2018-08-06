@@ -12,6 +12,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
 /**
  * Provides a resource to get view modes by entity and bundle.
@@ -111,17 +112,22 @@ class WebformSubmissionResource extends ResourceBase
         $basic_data = [];
         webform_rest_submission_data($sid, $submission, $sub_data, $basic_data);
         $result = array_merge($basic_data, $sub_data);
-        if (empty($submission)) return new NotFoundHttpException('The submission '.$sid .' in '. $id . ' was not found.');
+        if (empty($submission)) return new NotFoundHttpException('The submission '.$sid .' was not found.');
         return new ModifiedResourceResponse($result, 200);
     }
 
     public function post($id)
     {
+//        $current_request = \Drupal::requestStack()->getCurrentRequest();
+//        $remote_ip = $current_request->getClientIp();
+//        if ($remote_ip)
+        $webform = Webform::load($id);
+        if (!$webform) return new ModifiedResourceResponse('The webform '. $id. ' was not found.', 404);
         $input = \Drupal::request()->getContent();
         $data['data'] = \GuzzleHttp\json_decode($input, true);
         $data['webform_id'] = $id;
-        $data['webform'] = Webform::load($id);
+        $data['webform'] = $webform;
         WebformSubmission::create($data)->save();
-        return new ModifiedResourceResponse('The webform submission in' . $id . 'has submitted successfully.');
+        return new ModifiedResourceResponse('The webform submission in' . $id . 'has submitted successfully.', 201);
     }
 }

@@ -93,10 +93,10 @@ class WebformListResource extends ResourceBase {
       throw new AccessDeniedHttpException();
     }
 
-    return $this->getFormList();
+    return $this->get_all_webform();
   }
 
-    protected function getFormList()
+    protected function get_all_webform()
     {
         $params = \Drupal::request()->query;
         $limit = $params->get('limit', 10);
