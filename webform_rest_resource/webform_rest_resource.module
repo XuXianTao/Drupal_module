@@ -31,17 +31,20 @@ function webform_rest_resource_help($route_name, RouteMatchInterface $route_matc
  * Helper Function used in webform rest resource
  */
 
-function webform_rest_list_encode(&$elements, &$element_result)
+function webform_rest_list_encode(&$elements, &$element_result, $webform_id = NULL)
 {
     foreach ($elements as $element_key => $element_item) {
         if (!webform_rest_isElementSupported($element_item['#type'])) continue;
+        if ($element_item['#type'] == 'captcha' && !empty($webform_id)) {
+            $element_item['#default_image_url'] = \Drupal\webform_rest_resource\Controller\CaptchaController::generate(false, $webform_id);
+        }
         foreach ($element_item as $k => $v) {
             if (substr($k, 0, 1) === '#') {
                 $element_result[$element_key][ltrim($k, '#')] = $v;
             } else {
                 if (empty($element_result[$element_key]['child'])) $element_result[$element_key]['child'] = [];
                 $child_element = [$k => $v];
-                webform_rest_list_encode($child_element, $element_result[$element_key]['child']);
+                webform_rest_list_encode($child_element, $element_result[$element_key]['child'], $webform_id);
             }
         }
     }
@@ -81,7 +84,10 @@ function webform_rest_supportedElements()
         //----------
         'webform_wizard_page' => 'webform_wizard_page',
         'details' => 'details',
-        'checkbox' => 'checkbox'
+        'checkbox' => 'checkbox',
+        'tel' => 'tel',
+        'email' => 'email',
+        'captcha' => 'captcha'
     ];
 }
 

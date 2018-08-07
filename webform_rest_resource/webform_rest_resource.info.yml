@@ -7,3 +7,4 @@ dependencies:
   - webform
   - rest
   - restui
+  - image_captcha

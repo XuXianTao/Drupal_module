@@ -210,10 +210,12 @@ class WebformResource extends ResourceBase
             'description' => $webform->getDescription(),
             'open' => FALSE,
             'message' => '',
+            'start_time' => (string) strtotime($webform->get('open'))?:'',
+            'end_time' => (string) strtotime($webform->get('close'))?:'',
             'elements' => []
         ];
 
-        webform_rest_list_encode($elements, $data['elements']);
+        webform_rest_list_encode($elements, $data['elements'], $webform->id());
 
         $open_status = WebformSubmissionForm::isOpen($webform);
         if ($open_status === TRUE) {
@@ -222,7 +224,7 @@ class WebformResource extends ResourceBase
             $data['message'] = $open_status['#markup'];
         }
 
-        $response = new ModifiedResourceResponse($data);
+        $response = new ModifiedResourceResponse($data, 200);
         return $response;
     }
 
@@ -233,7 +235,7 @@ class WebformResource extends ResourceBase
     protected function is_repeat($title)
     {
         $webforms_title = array_keys(Webform::loadMultiple());
-        return preg_grep('/^' . $title . '$/', $webforms_title);
+        return strpos($title, $webforms_title);
     }
 
 }

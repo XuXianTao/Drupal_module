@@ -181,6 +181,9 @@ class WebformSubmissionListResource extends ResourceBase
         $response = new ModifiedResourceResponse([
             'total' => (int) $total,
             'page' => (int) $page,
+            'open' => $webform->isOpen(),
+            'start_time' => (string) strtotime($webform->get('open'))?:'',
+            'end_time' => (string) strtotime($webform->get('close'))?:'',
             'list' => $results,
         ]);
 

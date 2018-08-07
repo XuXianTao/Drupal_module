@@ -7,6 +7,7 @@ use Drupal\rest\ModifiedResourceResponse;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
 use Drupal\webform\Entity\Webform;
+use Drupal\webform\WebformSubmissionForm;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -117,8 +118,18 @@ class WebformListResource extends ResourceBase {
         foreach ($webforms as $title => $webform) {
             //return new ModifiedResourceResponse(strpos('contact', $search));
             if (($status==='' || $webform->get('status') === $status) && ($search==='' || is_numeric(strpos(strtolower($webform->get('title')), strtolower($search))))) {
+                $result_elements = [
+                    'title' => $title,
+                    'description' => $webform->getDescription(),
+                    'open' => $webform->isOpen(),
+                    'message' => $webform->isOpen()? '' :  WebformSubmissionForm::isOpen($webform)['#markup'],
+                    'start_time' => (string) strtotime($webform->get('open'))?:'',
+                    'end_time' => (string) strtotime($webform->get('close'))?:'',
+                    'elements' => []
+                ];
+
                 $elements = $webform->getElementsDecoded();
-                webform_rest_list_encode($elements, $result_elements);
+                webform_rest_list_encode($elements, $result_elements['elements']);
                 $results[$title] = $result_elements;
             }
         }

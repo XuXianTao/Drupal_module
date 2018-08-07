@@ -8,6 +8,7 @@ use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
 use Drupal\webform\Entity\Webform;
 use Drupal\webform\Entity\WebformSubmission;
+use Drupal\webform_rest_resource\Controller\CaptchaController;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -29,6 +30,7 @@ use Symfony\Component\Translation\Exception\NotFoundResourceException;
 class WebformSubmissionResource extends ResourceBase
 {
 
+    const DELAY_TIME = 60; // 两次提交时间间隔seconds
     /**
      * A current user instance.
      *
@@ -118,16 +120,24 @@ class WebformSubmissionResource extends ResourceBase
 
     public function post($id)
     {
-//        $current_request = \Drupal::requestStack()->getCurrentRequest();
-//        $remote_ip = $current_request->getClientIp();
-//        if ($remote_ip)
         $webform = Webform::load($id);
+        // 提交表格为空
         if (!$webform) return new ModifiedResourceResponse('The webform '. $id. ' was not found.', 404);
+        // 提交表格已经关闭
+        if ($webform->isClosed()) return new ModifiedResourceResponse('The webform '. $id . ' is closed.', 412);
+        // 两次提交间隔过短
+        if (isset($_SESSION['drupal']['webform_posted']) && time() - $_SESSION['drupal']['webform_posted'] < self::DELAY_TIME) {
+            return new ModifiedResourceResponse('提交时间间隔过短，请' . (self::DELAY_TIME - (time() - $_SESSION['drupal']['webform_posted'])) . '秒后再提交', 412);
+        }
         $input = \Drupal::request()->getContent();
-        $data['data'] = \GuzzleHttp\json_decode($input, true);
+        if ($input) $data['data'] = \GuzzleHttp\json_decode($input, true);
+        else return new ModifiedResourceResponse('输入不能为空', 412);
+        // 验证码错误
+        if (!empty($webform->getElement('captcha')) && !CaptchaController::check($data['data']['captcha'])) return new ModifiedResourceResponse('验证码错误', 412);
         $data['webform_id'] = $id;
         $data['webform'] = $webform;
         WebformSubmission::create($data)->save();
+        $_SESSION['drupal']['webform_posted'] = time();
         return new ModifiedResourceResponse('The webform submission in' . $id . 'has submitted successfully.', 201);
     }
 }
