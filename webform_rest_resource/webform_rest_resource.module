@@ -42,9 +42,9 @@ function webform_rest_list_encode(&$elements, &$element_result, $webform_id = NU
             if (substr($k, 0, 1) === '#') {
                 $element_result[$element_key][ltrim($k, '#')] = $v;
             } else {
-                if (empty($element_result[$element_key]['child'])) $element_result[$element_key]['child'] = [];
+                if (empty($element_result[$element_key]['children'])) $element_result[$element_key]['children'] = [];
                 $child_element = [$k => $v];
-                webform_rest_list_encode($child_element, $element_result[$element_key]['child'], $webform_id);
+                webform_rest_list_encode($child_element, $element_result[$element_key]['children'], $webform_id);
             }
         }
     }
@@ -55,7 +55,7 @@ function webform_rest_list_decode(&$input, &$output)
     foreach ($input as $element_key => $element_item) {
         if (empty($output[$element_key])) $output[$element_key] = [];
         foreach ($element_item as $k => $v) {
-            if ($k == 'child') {
+            if ($k == 'children') {
                 webform_rest_list_decode($v, $output[$element_key]);
                 continue;
             } else {
