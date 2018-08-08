@@ -58,18 +58,14 @@ class CaptchaController
             _captcha_update_captcha_session($_SESSION['drupal']['captcha_sid'], $solution);
             $captcha_sid = $_SESSION['drupal']['captcha_sid'];
         }
-        if (!$is_response) {
-            return Url::fromRoute('image_captcha.generator', [
-                'session_id' => $captcha_sid,
-                'timestamp' => REQUEST_TIME
-            ])->toString();
+        $captcha_url = Url::fromRoute('image_captcha.generator', [
+            'session_id' => $captcha_sid,
+            'timestamp' => REQUEST_TIME
+        ])->setAbsolute(TRUE)->toString();
+        if ($is_response) {
+            return new Response($captcha_url);
         }
-        else {
-            return new Response(Url::fromRoute('image_captcha.generator', [
-                'session_id' => $captcha_sid,
-                'timestamp' => REQUEST_TIME
-            ])->toString());
-        }
+        return $captcha_url;
     }
 
     public static function check($captcha)
