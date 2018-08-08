@@ -110,21 +110,17 @@ class WebformResource extends ResourceBase
         $input = \Drupal::request()->getContent();
         $data = \GuzzleHttp\json_decode($input, true);
 
-        if ($this->is_repeat($data['title'])) return new ModifiedResourceResponse('The title has been defined', 409);
-
+        $uuid_servie = \Drupal::service('uuid');
+        $uuid = $uuid_servie->generate();
+        //由于webform的id限制为32位字符，将uuid整理为32位
+        $new_id = str_replace('-', '', $uuid);
         $webform = Webform::create([
-            'id' => $data['title'],
+            'id' => $new_id,
             'title' => $data['title'],
         ]);
-        // prepare elements, prepend '#' to element attribute key
+        $this->check_update($webform, $data);
 
-        $result = [];
-        webform_rest_list_decode($data['elements'], $result);
-        $data['elements'] = $result;
-        $webform->setElements($result);
-        $webform->save();
-
-        return new ModifiedResourceResponse($data, 201);
+        return new ModifiedResourceResponse($new_id, 201);
     }
 
 
@@ -135,47 +131,14 @@ class WebformResource extends ResourceBase
 
         if (empty($webform)) return new ModifiedResourceResponse('The ' . $id . 'was not found.', 404);
 
-        if ($webform->hasSubmissions()) return new ModifiedResourceResponse('The ' . $id . 'has submissions, can`t be updated.', 409);
+//        if ($webform->hasSubmissions()) return new ModifiedResourceResponse('The ' . $id . 'has submissions, can`t be updated.', 409);
 
         $raw = \Drupal::request()->getContent();
         $data = \GuzzleHttp\json_decode($raw, TRUE);
 
-        /**
-         * 定义了新标题并且新标题重复了
-         */
-        if (array_key_exists('title', $data) && $data['title'] != $id && $this->is_repeat($data['title'])) return new ModifiedResourceResponse('The title has been defined', 409);
+        $this->check_update($webform, $data);
 
-        /** update title
-         * 如果出现新标题则直接删除旧webform，重新创建，避免id占用
-         */
-        if (array_key_exists('title', $data)) {
-            if ($data['title'] != $id) {
-                $webform->delete();
-                $webform = Webform::create([
-                    'id' => $data['title'],
-                    'title' => $data['title']
-                ]);
-            }
-        }
-
-        // update webform elements
-        webform_rest_list_decode($data['elements'], $elements);
-        $webform->setElements($elements);
-
-        // update webform status
-        if (array_key_exists('open', $data)) {
-            $status = $data['open'] === TRUE ? Webform::STATUS_OPEN : Webform::STATUS_CLOSED;
-            $webform->setStatus($status);
-        }
-
-        // update node description
-        if (array_key_exists('description', $data)) {
-            $webform->set('description', $data['description']);
-        }
-
-        $webform->save();
-
-        return new ModifiedResourceResponse($data, 201);
+        return $this->get_webform($id, true);
     }
 
     public function delete($id)
@@ -199,43 +162,57 @@ class WebformResource extends ResourceBase
      * @param $id string    Webform ID(title)
      * @return ModifiedResourceResponse
      */
-    protected function get_webform($id)
+    protected function get_webform($id, $renew = false)
     {
         /** @var Webform $webform */
         $webform = Webform::load($id);
         if (!$webform) return new ModifiedResourceResponse('The Webform ' . $id . ' is not found.', 404);
         $elements = $webform->getElementsDecoded();
         $data = [
-            'title' => $id,
+            'id' => $id,
+            'title' => $webform->get('title'),
             'description' => $webform->getDescription(),
-            'open' => FALSE,
-            'message' => '',
-            'start_time' => (string) strtotime($webform->get('open'))?:'',
-            'end_time' => (string) strtotime($webform->get('close'))?:'',
+            'status' => $webform->get('status'),
+            'open_time' => strtotime($webform->get('open'))*1000,
+            'close_time' => strtotime($webform->get('close'))*1000,
             'elements' => []
         ];
 
         webform_rest_list_encode($elements, $data['elements'], $webform->id());
 
-        $open_status = WebformSubmissionForm::isOpen($webform);
-        if ($open_status === TRUE) {
-            $data['open'] = TRUE;
-        } else {
-            $data['message'] = $open_status['#markup'];
-        }
-
-        $response = new ModifiedResourceResponse($data, 200);
+        $response = new ModifiedResourceResponse($data, $renew? 201 : 200);
         return $response;
     }
 
-    /**Helper Function
-     * @param $title
-     * @return array
-     */
-    protected function is_repeat($title)
+    protected function check_update(Webform &$webform, &$data)
     {
-        $webforms_title = array_keys(Webform::loadMultiple());
-        return strpos($title, $webforms_title);
+        // update title
+        if (array_key_exists('title', $data)) $webform->set('title', $data['title']);
+
+        // update node description
+        if (array_key_exists('description', $data)) {
+            $webform->set('description', $data['description']);
+        }
+
+        // update webform status
+        if (array_key_exists('status', $data)) {
+            //$status = $data['status'] === TRUE ? Webform::STATUS_OPEN : Webform::STATUS_CLOSED;
+            $webform->setStatus($data['status']);
+        }
+
+        //update webform time
+        if (array_key_exists('open_time', $data)) {
+            $webform->set('open', date('Y-m-d\TH:i:s', substr($data['open_time'], 0, 10)));
+        }
+        if (array_key_exists('close_time', $data)) {
+            $webform->set('close', date('Y-m-d\TH:i:s', substr($data['close_time'], 0, 10)));
+        }
+        // update webform elements
+        if (array_key_exists('elements', $data)) {
+            webform_rest_list_decode($data['elements'], $elements);
+            $webform->setElements($elements);
+        }
+        $webform->save();
     }
 
 }

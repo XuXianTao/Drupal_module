@@ -106,7 +106,7 @@ class WebformListResource extends ResourceBase {
          */
         $page = $params->get('page', 0);
         /**
-         * $status   'open'/ 'closed'
+         * $status   'open'/ 'closed'/ 'scheduled'
          */
         $status = $params->get('status', '');
         $search =  $params->get('search', '');
@@ -115,22 +115,22 @@ class WebformListResource extends ResourceBase {
          * 争取换用node或者其他迂回方式辅助进行查询、过滤？
          */
         $webforms = Webform::loadMultiple();
-        foreach ($webforms as $title => $webform) {
+        foreach ($webforms as $id => $webform) {
             //return new ModifiedResourceResponse(strpos('contact', $search));
             if (($status==='' || $webform->get('status') === $status) && ($search==='' || is_numeric(strpos(strtolower($webform->get('title')), strtolower($search))))) {
                 $result_elements = [
-                    'title' => $title,
+                    'id' => $id,
+                    'title' => $webform->get('title'),
                     'description' => $webform->getDescription(),
-                    'open' => $webform->isOpen(),
-                    'message' => $webform->isOpen()? '' :  WebformSubmissionForm::isOpen($webform)['#markup'],
-                    'start_time' => (string) strtotime($webform->get('open'))?:'',
-                    'end_time' => (string) strtotime($webform->get('close'))?:'',
+                    'status' => $webform->get('status'),
+                    'open_time' => strtotime($webform->get('open'))*1000,
+                    'close_time' => strtotime($webform->get('close'))*1000,
                     'elements' => []
                 ];
 
                 $elements = $webform->getElementsDecoded();
                 webform_rest_list_encode($elements, $result_elements['elements']);
-                $results[$title] = $result_elements;
+                $results[$id] = $result_elements;
             }
         }
         $chunk_result = array_chunk($results, $limit, true);
