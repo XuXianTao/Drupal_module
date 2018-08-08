@@ -34,7 +34,7 @@ function webform_rest_resource_help($route_name, RouteMatchInterface $route_matc
 function webform_rest_list_encode(&$elements, &$element_result, $webform_id = NULL)
 {
     foreach ($elements as $element_key => $element_item) {
-        if (!webform_rest_isElementSupported($element_item['#type'])) continue;
+        if (!webform_rest_is_element_supported($element_item['#type'])) continue;
         if ($element_item['#type'] == 'captcha' && !empty($webform_id)) {
             $element_item['#default_image_url'] = \Drupal\webform_rest_resource\Controller\CaptchaController::generate(false, $webform_id);
         }
@@ -66,13 +66,13 @@ function webform_rest_list_decode(&$input, &$output)
     }
 }
 
-function webform_rest_isElementSupported($element_type)
+function webform_rest_is_element_supported($element_type)
 {
-    $supported_elements = webform_rest_supportedElements();
+    $supported_elements = webform_rest_supported_elements();
     return array_key_exists($element_type, $supported_elements);
 }
 
-function webform_rest_supportedElements()
+function webform_rest_supported_elements()
 {
     return [
         'textfield' => 'textfield',

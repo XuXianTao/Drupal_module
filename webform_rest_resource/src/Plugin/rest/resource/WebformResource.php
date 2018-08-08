@@ -102,7 +102,7 @@ class WebformResource extends ResourceBase
             throw new AccessDeniedHttpException();
         }
 
-        return $this->get_webform($id);
+        return $this->getWebform($id);
     }
 
     public function post()
@@ -118,7 +118,7 @@ class WebformResource extends ResourceBase
             'id' => $new_id,
             'title' => $data['title'],
         ]);
-        $this->check_update($webform, $data);
+        $this->checkUpdate($webform, $data);
 
         return new ModifiedResourceResponse($new_id, 201);
     }
@@ -136,9 +136,9 @@ class WebformResource extends ResourceBase
         $raw = \Drupal::request()->getContent();
         $data = \GuzzleHttp\json_decode($raw, TRUE);
 
-        $this->check_update($webform, $data);
+        $this->checkUpdate($webform, $data);
 
-        return $this->get_webform($id, true);
+        return $this->getWebform($id, true);
     }
 
     public function delete($id)
@@ -162,7 +162,7 @@ class WebformResource extends ResourceBase
      * @param $id string    Webform ID(title)
      * @return ModifiedResourceResponse
      */
-    protected function get_webform($id, $renew = false)
+    protected function getWebform($id, $renew = false)
     {
         /** @var Webform $webform */
         $webform = Webform::load($id);
@@ -184,7 +184,7 @@ class WebformResource extends ResourceBase
         return $response;
     }
 
-    protected function check_update(Webform &$webform, &$data)
+    protected function checkUpdate(Webform &$webform, &$data)
     {
         // update title
         if (array_key_exists('title', $data)) $webform->set('title', $data['title']);

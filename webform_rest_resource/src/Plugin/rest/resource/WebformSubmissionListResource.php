@@ -104,10 +104,10 @@ class WebformSubmissionListResource extends ResourceBase
         if (!$this->currentUser->hasPermission('access content')) {
             throw new AccessDeniedHttpException();
         }
-        return $this->get_all_webform_submission($id);
+        return $this->getAllWebformSubmission($id);
     }
 
-    protected function get_all_webform_submission($id) {
+    protected function getAllWebformSubmission($id) {
         $webform = Webform::load($id);
         if (empty($webform)) return new ModifiedResourceResponse('The ' . $id . 'was not found.', 404);
         $params = \Drupal::request()->query;
