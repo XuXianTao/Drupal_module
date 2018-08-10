@@ -1,0 +1,116 @@
+<?php
+
+/**
+ * @file
+ * Contains webform_rest_resource.module.
+ */
+
+use Drupal\Core\Database\Database;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\rest\ModifiedResourceResponse;
+use Drupal\webform\Entity\Webform;
+use Drupal\webform\WebformSubmissionStorageInterface;
+
+define('WEBFORM_NODE_HELPER', __DIR__.'/webform_node_helper.php');
+/**
+ * Implements hook_help().
+ */
+function webform_node_rest_resource_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the webform_rest_resource module.
+    case 'help.page.webform_rest_resource':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The module built for webform rest resource(without webform node)') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Helper Function used in webform rest resource
+ */
+
+function _webform_node_rest_resource_list_encode(&$elements, &$element_result, $webform_id = NULL)
+{
+    foreach ($elements as $element_key => $element_item) {
+        if (!_webform_node_rest_resource_is_element_supported($element_item['#type'])) continue;
+        if ($element_item['#type'] == 'captcha' && !empty($webform_id)) {
+            $element_item['#default_image_url'] = \Drupal\webform_rest_resource\Controller\CaptchaController::generate(false, $webform_id);
+        }
+        foreach ($element_item as $k => $v) {
+            if (substr($k, 0, 1) === '#') {
+                $element_result[$element_key][ltrim($k, '#')] = $v;
+            } else {
+                if (empty($element_result[$element_key]['children'])) $element_result[$element_key]['children'] = [];
+                $child_element = [$k => $v];
+                _webform_node_rest_resource_list_encode($child_element, $element_result[$element_key]['children'], $webform_id);
+            }
+        }
+    }
+}
+
+function _webform_node_rest_resource_list_decode(&$input, &$output)
+{
+    foreach ($input as $element_key => $element_item) {
+        if (empty($output[$element_key])) $output[$element_key] = [];
+        foreach ($element_item as $k => $v) {
+            if ($k == 'children') {
+                _webform_node_rest_resource_list_decode($v, $output[$element_key]);
+                continue;
+            } else {
+                $k = '#' . $k;
+                $output[$element_key][$k] = $v;
+            }
+        }
+    }
+}
+
+function _webform_node_rest_resource_is_element_supported($element_type)
+{
+    $supported_elements = _webform_node_rest_resource_supported_elements();
+    return array_key_exists($element_type, $supported_elements);
+}
+
+function _webform_node_rest_resource_supported_elements()
+{
+    return [
+        'textfield' => 'textfield',
+        'textarea' => 'textarea',
+        'checkboxes' => 'checkboxes',
+        'radios' => 'radios',
+        'checkboxes_other' => 'checkboxes_other',
+        'radios_other' => 'radios_other',
+        //----------
+        'webform_wizard_page' => 'webform_wizard_page',
+        'details' => 'details',
+        'checkbox' => 'checkbox',
+        'tel' => 'tel',
+        'email' => 'email',
+        'captcha' => 'captcha'
+    ];
+}
+
+/**
+ * @param $k
+ * @param $submission \Drupal\webform\WebformSubmissionInterface
+ * @param $sub_data
+ * @param $basic_data
+ */
+function _webform_node_rest_resource_submission_data($k, &$submission, &$sub_data, &$basic_data)
+{
+    $sub_data = $submission->getData();
+    $basic_data = [
+        'sid' => $k,
+        'created' => $submission->getCreatedTime(),
+        'completed' => $submission->getCompletedTime(),
+        'changed' => $submission->getChangedTime(),
+        'current_page' => $submission->getCurrentPage(),
+        'remote_addr' => $submission->getRemoteAddr(),
+        'uid' => $submission->getOwnerId(),
+        'locked' => $submission->isLocked(),
+        'sticky' => $submission->isSticky(),
+        'in_draft' => $submission->isDraft()
+    ];
+}

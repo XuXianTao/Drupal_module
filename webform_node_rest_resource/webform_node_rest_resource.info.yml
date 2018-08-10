@@ -1,0 +1,11 @@
+name: 'Webform Node Rest Resource'
+type: module
+description: 'The module built for webform rest resource<font color="red">(with webform node)</font>'
+core: 8.x
+package: 'Custom'
+dependencies:
+  - webform
+  - webform_node
+  - rest
+  - restui
+  - image_captcha
