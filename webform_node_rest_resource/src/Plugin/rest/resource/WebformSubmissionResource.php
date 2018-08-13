@@ -121,14 +121,25 @@ class WebformSubmissionResource extends ResourceBase
     public function post($id)
     {
         $webform = Webform::load($id);
-        // 判断是否已经提交过
         $db = Drupal::database();
+
+        //提交是否达到上限
         $query = $db->select('webform_submission', 'ws')
+            ->condition('webform_id', $id);
+        $has_submit = $query->countQuery()->execute()->fetchField();
+        if ($has_submit>=$webform->getSetting('limit_total')) {
+            return new ModifiedResourceResponse('The submissions have reached the upper limit. You can\'t submit now.', 412);
+        }
+
+        // 判断是否已经提交过
+        $query = $db->select('webform_submission', 'ws')
+            ->condition('webform_id', $id)
             ->condition('uid', $this->currentUser->id());
         $has_submit = $query->countQuery()->execute()->fetchField();
         if ($has_submit) {
-            //return new ModifiedResourceResponse('You have submitted befored, don\'t have to submit again.', 412);
+            return new ModifiedResourceResponse('You have submitted befored, don\'t have to submit again.', 412);
         }
+
 
         // 提交表格为空
         if (!$webform) return new ModifiedResourceResponse('The webform '. $id. ' was not found.', 404);
