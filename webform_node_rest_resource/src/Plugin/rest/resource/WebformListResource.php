@@ -119,38 +119,17 @@ class WebformListResource extends ResourceBase {
         if (!empty($search)) {
             $query->condition('n.title', '%'. $query->escapeLike($search) . '%', 'LIKE');
         }
+        $query_clone = clone $query;
+        $total = $query_clone->countQuery()->execute()->fetchField();
         $query->range($page*$limit, $limit);
         $webform_ids = $query->execute()->fetchCol(0);
         $node_ids = $query->execute()->fetchCol(1);
         $webforms = Webform::loadMultiple($webform_ids);
         $i = 0;
         foreach ($webforms as $id => $webform) {
-            $result_elements = [
-                'nid' => $node_ids[$i++],
-                'wid' => $id,
-                'title' => $webform->get('title'),
-                'description' => $webform->getDescription(),
-                'status' => $webform->get('status'),
-                'open_time' => strtotime($webform->get('open'))*1000,
-                'close_time' => strtotime($webform->get('close'))*1000,
-                'settings' => [],
-                'elements' => []
-            ];
-            $limit_total = $webform->getSetting('limit_total'); //限制提交次数
-            $query = Database::getConnection()->select('webform_submission', 'ws')
-                ->condition('ws.webform_id', $webform->id());
-            $have_submit = $query->countQuery()->execute()->fetchField(); //已提交次数
-            $result_elements['settings'] = [
-                'limit_total' => $limit_total,
-                'have_submited' => (integer)$have_submit
-            ];
-
-            $elements = $webform->getElementsDecoded();
-            _webform_node_rest_resource_list_encode($elements, $result_elements['elements']);
+            _webform_node_rest_resource_build_form($result_elements, $webform, $node_ids[$i++]);
             $results[$id] = $result_elements;
         }
-        $total = count($results);
-
         $response = new ModifiedResourceResponse([
             'total' => (int)$total,
             'page_size' => (int)$limit,

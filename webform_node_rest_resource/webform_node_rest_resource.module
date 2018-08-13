@@ -7,11 +7,13 @@
 
 use Drupal\Core\Database\Database;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\node\Entity\Node;
 use Drupal\rest\ModifiedResourceResponse;
 use Drupal\webform\Entity\Webform;
 use Drupal\webform\WebformSubmissionStorageInterface;
 
 define('WEBFORM_NODE_HELPER', __DIR__.'/webform_node_helper.php');
+require_once WEBFORM_NODE_HELPER;
 /**
  * Implements hook_help().
  */
@@ -31,13 +33,49 @@ function webform_node_rest_resource_help($route_name, RouteMatchInterface $route
 /**
  * Helper Function used in webform rest resource
  */
+/**
+ * @param $data
+ * @param $webform Webform
+ * @param $nid
+ */
+function _webform_node_rest_resource_build_form(&$data, &$webform, $nid = NULL)
+{
+    $node = Node::load($nid);
+    $data = [
+        'nid' => $nid,
+        'wid' => $webform->id(),
+        'title' => get_exact_value($node, 'title'),
+        'description' => $webform->getDescription(),
+        'status' => get_exact_value($node, 'webform', 'status'),
+        'open_time' => strtotime(get_exact_value($node, 'webform', 'open'))*1000,
+        'close_time' => strtotime(get_exact_value($node, 'webform', 'close'))*1000,
+        'settings' => [],
+        'elements' => []
+    ];
 
-function _webform_node_rest_resource_list_encode(&$elements, &$element_result, $webform_id = NULL)
+    $limit_total = $webform->getSetting('limit_total'); //限制提交次数
+    $query = Database::getConnection()->select('webform_submission', 'ws')
+        ->condition('ws.webform_id', $webform->id());
+    $have_submit = $query->countQuery()->execute()->fetchField(); //已提交次数
+    $data['settings'] = [
+        'limit_total' => $limit_total,
+        'have_submited' => (integer)$have_submit
+    ];
+
+    $elements = $webform->getElementsDecoded();
+    _webform_node_rest_resource_list_encode($elements, $data['elements'], $webform->id());
+
+}
+
+function _webform_node_rest_resource_list_encode(&$elements, &$element_result, $webform_id = NULL, $values = [])
 {
     foreach ($elements as $element_key => $element_item) {
         if (!_webform_node_rest_resource_is_element_supported($element_item['#type'])) continue;
         if ($element_item['#type'] == 'captcha' && !empty($webform_id)) {
             $element_item['#default_image_url'] = \Drupal\webform_rest_resource\Controller\CaptchaController::generate(false, $webform_id);
+        }
+        if (array_key_exists('#type', $element_item) && !empty($values)) {
+            $element_item['#value'] = $values[$element_key];
         }
         foreach ($element_item as $k => $v) {
             if (substr($k, 0, 1) === '#') {
@@ -45,7 +83,7 @@ function _webform_node_rest_resource_list_encode(&$elements, &$element_result, $
             } else {
                 if (empty($element_result[$element_key]['children'])) $element_result[$element_key]['children'] = [];
                 $child_element = [$k => $v];
-                _webform_node_rest_resource_list_encode($child_element, $element_result[$element_key]['children'], $webform_id);
+                _webform_node_rest_resource_list_encode($child_element, $element_result[$element_key]['children'], $webform_id, $values);
             }
         }
     }
@@ -98,19 +136,30 @@ function _webform_node_rest_resource_supported_elements()
  * @param $sub_data
  * @param $basic_data
  */
-function _webform_node_rest_resource_submission_data($k, &$submission, &$sub_data, &$basic_data)
+function _webform_node_rest_resource_submission_data($k, &$submission, &$sub_data, &$basic_data, $only_id = false, $only_value = true)
 {
-    $sub_data = $submission->getData();
+    $webform = $submission->getWebform();
+
+    if (!$only_id) {
+        $values = $submission->getData();
+        if ($only_value) {
+            $sub_data = $values;
+        } else {
+            $elements = $webform->getElementsDecoded();
+            _webform_node_rest_resource_list_encode($elements, $sub_data, null, $values);
+        }
+    }
     $basic_data = [
         'sid' => $k,
+        'title' => $webform->get('title'),
         'created' => $submission->getCreatedTime(),
         'completed' => $submission->getCompletedTime(),
         'changed' => $submission->getChangedTime(),
-        'current_page' => $submission->getCurrentPage(),
-        'remote_addr' => $submission->getRemoteAddr(),
+        //'current_page' => $submission->getCurrentPage(),
+        //'remote_addr' => $submission->getRemoteAddr(),
         'uid' => $submission->getOwnerId(),
-        'locked' => $submission->isLocked(),
-        'sticky' => $submission->isSticky(),
-        'in_draft' => $submission->isDraft()
+        //'locked' => $submission->isLocked(),
+        //'sticky' => $submission->isSticky(),
+        //'in_draft' => $submission->isDraft(),
     ];
 }

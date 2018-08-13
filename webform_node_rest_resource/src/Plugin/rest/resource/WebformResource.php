@@ -15,7 +15,6 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-require_once WEBFORM_NODE_HELPER;
 /**
  * Provides a resource to get view modes by entity and bundle.
  *
@@ -191,30 +190,7 @@ class WebformResource extends ResourceBase
         if (!$webform) {
             throw new NotFoundHttpException('The Webform Node' . $nid . '\'s webform was not found.');
         }
-        $data = [
-            'nid' => $nid,
-            'wid' => $webform->id(),
-            'title' => get_exact_value($node, 'title'),
-            'description' => $webform->getDescription(),
-            'status' => get_exact_value($node, 'webform', 'status'),
-            'open_time' => strtotime(get_exact_value($node, 'webform', 'open'))*1000,
-            'close_time' => strtotime(get_exact_value($node, 'webform', 'close'))*1000,
-            'settings' => [],
-            'elements' => []
-        ];
-
-        $limit_total = $webform->getSetting('limit_total'); //限制提交次数
-        $query = Database::getConnection()->select('webform_submission', 'ws')
-            ->condition('ws.webform_id', $webform->id());
-        $have_submit = $query->countQuery()->execute()->fetchField(); //已提交次数
-        $data['settings'] = [
-            'limit_total' => $limit_total,
-            'have_submited' => (integer)$have_submit
-        ];
-
-        $elements = $webform->getElementsDecoded();
-        _webform_node_rest_resource_list_encode($elements, $data['elements'], $webform->id());
-
+        _webform_node_rest_resource_build_form($data, $webform, $nid);
         $response = new ModifiedResourceResponse($data, $renew? 201 : 200);
         return $response;
     }

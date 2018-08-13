@@ -109,10 +109,15 @@ class WebformSubmissionResource extends ResourceBase
             throw new AccessDeniedHttpException();
         }
 
+        $params = \Drupal::request()->query;
+        $only_id = $params->get('only_id')==='true'?true:false;
+        $only_value = $params->get('only_value')==='true'?true:false;
+
         $submission = WebformSubmission::load($sid);
+        if (empty($submission)) return new ModifiedResourceResponse('The submission '. $sid . ' was not found.', 404);
         $sub_data = [];
         $basic_data = [];
-        _webform_node_rest_resource_submission_data($sid, $submission, $sub_data, $basic_data);
+        _webform_node_rest_resource_submission_data($sid, $submission, $sub_data, $basic_data, $only_id, $only_value);
         $result = array_merge($basic_data, $sub_data);
         if (empty($submission)) return new NotFoundHttpException('The submission '.$sid .' was not found.');
         return new ModifiedResourceResponse($result, 200);
