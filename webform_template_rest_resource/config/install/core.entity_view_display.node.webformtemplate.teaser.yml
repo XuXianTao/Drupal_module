@@ -1,0 +1,18 @@
+langcode: zh-hans
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.node.teaser
+    - node.type.webformtemplate
+  module:
+    - user
+id: node.webformtemplate.teaser
+targetEntityType: node
+bundle: webformtemplate
+mode: teaser
+content:
+  links:
+    weight: 100
+    region: content
+hidden:
+  langcode: true

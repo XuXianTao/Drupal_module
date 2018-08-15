@@ -9,10 +9,13 @@
 namespace Drupal\webform_node_rest_resource\Controller;
 
 use Drupal;
+use Drupal\Core\Render\HtmlResponse;
 use Drupal\Core\Url;
 use Drupal\node\Entity\Node;
 use Drupal\webform_node_rest_resource\Plugin\rest\WebformNodeHelper;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 class CaptchaController
 {
@@ -65,7 +68,8 @@ class CaptchaController
             'timestamp' => REQUEST_TIME
         ])->setAbsolute(TRUE)->toString();
         if ($is_response) {
-            return new Response($captcha_url);
+            $content = file_get_contents($captcha_url);
+            return new Response($content, 200, ['content-type' => 'image/jpeg']);
         }
         return $captcha_url;
     }

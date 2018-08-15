@@ -1,2 +1,8 @@
 
 webform_rest_resource/\.idea/
+
+add_rest_route\.php
+
+webform_node_rest_resource/\.idea/
+
+*.zip

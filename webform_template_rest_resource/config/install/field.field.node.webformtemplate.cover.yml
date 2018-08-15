@@ -1,0 +1,37 @@
+langcode: zh-hans
+status: true
+dependencies:
+  config:
+    - field.storage.node.cover
+    - node.type.webformtemplate
+  module:
+    - image
+id: node.webformtemplate.cover
+field_name: cover
+entity_type: node
+bundle: webformtemplate
+label: cover
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  file_extensions: 'png gif jpg jpeg'
+  alt_field: true
+  alt_field_required: true
+  title_field: false
+  title_field_required: false
+  max_resolution: ''
+  min_resolution: ''
+  default_image:
+    uuid: null
+    alt: ''
+    title: ''
+    width: null
+    height: null
+  file_directory: '[date:custom:Y]-[date:custom:m]'
+  max_filesize: ''
+  handler: 'default:file'
+  handler_settings: {  }
+field_type: image
