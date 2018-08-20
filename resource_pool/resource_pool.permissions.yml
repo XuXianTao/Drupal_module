@@ -1,0 +1,22 @@
+add base resource entity entities:
+  title: 'Create new Base Resource Entity entities'
+
+administer base resource entity entities:
+  title: 'Administer Base Resource Entity entities'
+  description: 'Allow to access the administration form to configure Base Resource Entity entities.'
+  restrict access: true
+
+delete base resource entity entities:
+  title: 'Delete Base Resource Entity entities'
+
+edit base resource entity entities:
+  title: 'Edit Base Resource Entity entities'
+
+access base resource entity overview:
+  title: 'Access the Base Resource Entity overview page'
+
+view published base resource entity entities:
+  title: 'View published Base Resource Entity entities'
+
+view unpublished base resource entity entities:
+  title: 'View unpublished Base Resource Entity entities'

@@ -1,0 +1,21 @@
+langcode: zh-hans
+status: true
+dependencies:
+  config:
+    - field.storage.base_resource_entity.special_text
+    - resource_pool.base_resource_entity_type.rich_text
+  module:
+    - text
+id: base_resource_entity.rich_text.special_text
+field_name: special_text
+entity_type: base_resource_entity
+bundle: rich_text
+label: special_text
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  display_summary: false
+field_type: text_with_summary

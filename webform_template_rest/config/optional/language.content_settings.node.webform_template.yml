@@ -1,0 +1,13 @@
+langcode: zh-hans
+status: true
+dependencies:
+  enforced:
+      module:
+        - webform_template_rest
+  config:
+    - node.type.webform_template
+id: node.webform_template
+target_entity_type_id: node
+target_bundle: webform_template
+default_langcode: site_default
+language_alterable: false

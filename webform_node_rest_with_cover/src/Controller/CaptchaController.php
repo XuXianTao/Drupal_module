@@ -6,13 +6,12 @@
  * Time: 上午10:05
  */
 
-namespace Drupal\webform_node_rest_resource\Controller;
+namespace Drupal\webform_node_rest_with_cover\Controller;
 
 use Drupal;
 use Drupal\Core\Render\HtmlResponse;
 use Drupal\Core\Url;
 use Drupal\node\Entity\Node;
-use Drupal\webform_node_rest_resource\Plugin\rest\WebformNodeHelper;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -81,12 +80,6 @@ class CaptchaController
         if (strtolower($captcha) != strtolower($_SESSION['drupal']['captcha_solution'])) return false;
         else return true;
     }
-//
-//    public function test()
-//    {
-//        $nid = 273;
-//        $webform = Node::load($nid)->webform;
-//        dump($webform);
-//    }
+
 }
 

@@ -1,0 +1,18 @@
+
+# Base Resource Entity menu items definition
+#entity.base_resource_entity.collection:
+#  title: 'Base Resource Entity list'
+#  route_name: entity.base_resource_entity.collection
+#  description: 'List Base Resource Entity entities'
+#  parent: system.admin_content
+#  weight: 100
+
+
+# Base Resource Entity type menu items definition
+entity.base_resource_entity_type.collection:
+  title: '资源池类型'
+  route_name: entity.base_resource_entity_type.collection
+  description: 'List Base Resource Entity type (bundles)'
+  parent: system.admin_structure
+  weight: 0
+

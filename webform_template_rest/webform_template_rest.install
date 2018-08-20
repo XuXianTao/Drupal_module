@@ -1,0 +1,24 @@
+<?php
+
+use Drupal\node\Entity\Node;
+/**
+ * 在安装之后新建node节点对应当前现有的webform模板
+ */
+function webform_template_rest_install() {
+    $webformStorage = \Drupal::entityTypeManager()->getStorage('webform');
+    $query = $webformStorage->getQuery();
+    $query->condition('template', TRUE);
+    $query->condition('archive', FALSE);
+    $query->sort('title');
+    $entity_ids = $query->execute();
+    /** @var \Drupal\webform\Entity\Webform[] $webforms */
+    $webforms = $webformStorage->loadMultiple($entity_ids);
+    foreach ($webforms as $webform) {
+        Node::create([
+            'type' => 'webform_template',
+            'title' => $webform->get('title'),
+            'cover' => '',
+            'webform_template_id' => $webform->id()
+        ])->save();
+    }
+}

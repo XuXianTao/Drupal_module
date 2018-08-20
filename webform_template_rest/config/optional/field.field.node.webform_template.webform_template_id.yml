@@ -1,0 +1,21 @@
+langcode: zh-hans
+status: true
+dependencies:
+  enforced:
+      module:
+        - webform_template_rest
+  config:
+    - field.storage.node.webform_template_id
+    - node.type.webform_template
+id: node.webform_template.webform_template_id
+field_name: webform_template_id
+entity_type: node
+bundle: webform_template
+label: webform_template_id
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

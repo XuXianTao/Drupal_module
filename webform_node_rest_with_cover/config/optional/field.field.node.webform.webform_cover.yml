@@ -1,0 +1,37 @@
+langcode: zh-hans
+status: true
+dependencies:
+  config:
+    - field.storage.node.webform_cover
+    - node.type.webform
+  module:
+    - image
+id: node.webform.webform_cover
+field_name: webform_cover
+entity_type: node
+bundle: webform
+label: webform_cover
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  file_extensions: 'png gif jpg jpeg'
+  alt_field: true
+  alt_field_required: false
+  title_field: false
+  title_field_required: false
+  max_resolution: ''
+  min_resolution: ''
+  default_image:
+    uuid: null
+    alt: ''
+    title: ''
+    width: null
+    height: null
+  file_directory: '[date:custom:Y]-[date:custom:m]'
+  max_filesize: ''
+  handler: 'default:file'
+  handler_settings: {  }
+field_type: image

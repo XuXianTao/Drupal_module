@@ -1,0 +1,11 @@
+name: Webform Template Rest
+type: module
+description: A rest resource used for the webform template
+core: 8.x
+package: Custom
+dependencies:
+  - webform
+  - webform_templates
+  - webform_node
+  - rest
+  - restui

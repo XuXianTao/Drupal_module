@@ -1,0 +1,6 @@
+captcha.generate:
+  path: 'api/webform/captcha/generate/{webform_id}'
+  defaults:
+    _controller: 'Drupal\webform_node_rest_with_cover\Controller\CaptchaController::generate'
+  requirements:
+    _permission: 'access captcha'

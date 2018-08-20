@@ -1,0 +1,7 @@
+name: Resource Pool
+type: module
+description: A module to help storage those static resource files like image, html.
+core: 8.x
+package: Custom
+dependencies:
+  - taxonomy

@@ -1,0 +1,40 @@
+langcode: zh-hans
+status: true
+dependencies:
+  config:
+    - field.field.base_resource_entity.image.image
+    - resource_pool.base_resource_entity_type.image
+  module:
+    - image
+    - user
+id: base_resource_entity.image.default
+targetEntityType: base_resource_entity
+bundle: image
+mode: default
+content:
+  image:
+    weight: 1
+    label: above
+    settings:
+      image_style: ''
+      image_link: ''
+    third_party_settings: {  }
+    type: image
+    region: content
+  name:
+    label: above
+    type: string
+    weight: -4
+    region: content
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+  user_id:
+    label: hidden
+    type: author
+    weight: 0
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+hidden:
+  langcode: true

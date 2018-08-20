@@ -1,0 +1,194 @@
+<?php
+
+/**
+ * @file
+ * Contains webform_template_rest.module.
+ */
+
+use Drupal\Core\Database\Database;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\image\Entity\ImageStyle;
+use Drupal\node\Entity\Node;
+use Drupal\webform\Entity\Webform;
+
+/**
+ * Implements hook_help().
+ */
+function webform_template_rest_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the webform_template_rest module.
+    case 'help.page.webform_template_rest':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('A rest resource used for the webform template') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function webform_template_rest_theme() {
+  return [
+    'webform_template_rest' => [
+      'render element' => 'children',
+    ],
+  ];
+}
+
+function webform_template_rest_module_preuninstall($module) {
+  $nids = \Drupal::entityQuery('node')
+    ->condition('type', 'webform_template')
+    ->execute();
+  foreach($nids as $nid) {
+    Node::load($nid)->delete();
+  }
+}
+
+
+function webform_template_rest_form_webform_settings_form_alter(&$form, &$form_state, $form_id) {
+    if (isset($form['actions']['submit'])) {
+        array_unshift($form['actions']['submit']['#submit'],'_webform_template_rest_action_after_settings');
+    }
+}
+
+/** 为webform设置页面的提交按钮的函数
+ *
+ */
+function _webform_template_rest_action_after_settings(array $form, FormStateInterface $form_state) {
+    //dpm($form, 'form');
+    //dpm($form_state, 'form_state');
+    $values = $form_state->getValues();
+    $wid = $form['general_settings']['id']['#value'];
+    $webform = Webform::load($wid);
+    if ($values['template']) {
+        Node::create([
+            'type' => 'webform_template',
+            'title' => $webform->get('title'),
+            'cover' => '',
+            'webform_template_id' => $webform->id()
+        ])->save();
+    } else {
+        $db = \Drupal::database();
+        $query = $db->select('node__webform_template_id', 'nw');
+        $query->fields('nw', ['entity_id']);
+        $query->condition('webform_template_id_value', $wid);
+        $q_count = clone $query;
+        $count = $q_count->countQuery()->execute()->fetchField();
+        if ($count > 0) {
+            $nid = $query->execute()->fetchField();
+            Node::load($nid)->delete();
+        }
+    }
+}
+
+
+/**
+ * @param $webforms \Drupal\webform\WebformInterface[]
+ */
+function _webform_template_rest_construct(&$webforms, $limit, $page, $only_cover, $just_one=false) {
+    /**
+     * 添加封面图片
+     */
+    $db = \Drupal::database()->select('node__webform_template_id', 'wp');
+    $query = $db->fields('wp', ['webform_template_id_value', 'entity_id']);
+    $nodes = $query->execute()->fetchAllKeyed();
+
+    $results = [];
+    foreach ($webforms as $id => $webform) {
+        $cover = Node::load($nodes[$id])->get('cover');
+        //dump($cover);
+        $result_elements = [
+            //'nid' => $node_ids[$i++],
+            'wid' => $id,
+            'title' => $webform->get('title'),
+            'description' => $webform->getDescription(),
+            'status' => $webform->get('status'),
+            'open_time' => strtotime($webform->get('open'))*1000,
+            'close_time' => strtotime($webform->get('close'))*1000,
+            'cover_img' => $cover->entity->uri->value?file_create_url($cover->entity->uri->value):null,
+            'settings' => [],
+            'elements' => []
+        ];
+        if ($only_cover) {
+            $results[$id] = $result_elements;
+            continue;
+        }
+
+        $limit_total = $webform->getSetting('limit_total'); //限制提交次数
+        $query = Database::getConnection()->select('webform_submission', 'ws')
+            ->condition('ws.webform_id', $webform->id());
+        $have_submit = $query->countQuery()->execute()->fetchField(); //已提交次数
+        $result_elements['settings'] = [
+            'limit_total' => $limit_total,
+            'have_submited' => (integer)$have_submit
+        ];
+
+        $elements = $webform->getElementsDecoded();
+        _webform_template_rest_list_encode($elements, $result_elements['elements']);
+        if ($just_one) return $result_elements;
+        $results[$id] = $result_elements;
+    }
+
+    $chunk_result = array_chunk($results, $limit, true);
+    $result_final = $chunk_result[$page];
+    $total = count($results);
+
+    $output =[
+        'total' => (int)$total,
+        'page_size' => (int)$limit,
+        'page' => (int)$page,
+        'list' => $result_final,
+    ];
+
+    return $output;
+}
+
+function _webform_template_rest_list_encode(&$elements, &$element_result, $webform_id = NULL)
+{
+    foreach ($elements as $element_key => $element_item) {
+        if (!_webform_template_rest_is_element_supported($element_item['#type'])) continue;
+        /*
+        if ($element_item['#type'] == 'captcha' && !empty($webform_id)) {
+            $element_item['#default_image_url'] = \Drupal\webform_rest_resource\Controller\CaptchaController::generate(false, $webform_id);
+        }*/
+        foreach ($element_item as $k => $v) {
+            if (substr($k, 0, 1) === '#') {
+                $element_result[$element_key][ltrim($k, '#')] = $v;
+            } else {
+                if (empty($element_result[$element_key]['children'])) $element_result[$element_key]['children'] = [];
+                $child_element = [$k => $v];
+                _webform_template_rest_list_encode($child_element, $element_result[$element_key]['children'], $webform_id);
+            }
+        }
+    }
+}
+function _webform_template_rest_is_element_supported($element_type)
+{
+    $supported_elements = _webform_template_rest_supported_elements();
+    return array_key_exists($element_type, $supported_elements);
+}
+
+function _webform_template_rest_supported_elements()
+{
+    return [
+        'textfield' => 'textfield',
+        'textarea' => 'textarea',
+        'checkboxes' => 'checkboxes',
+        'radios' => 'radios',
+        'checkboxes_other' => 'checkboxes_other',
+        'radios_other' => 'radios_other',
+        //----------
+        'webform_wizard_page' => 'webform_wizard_page',
+        'details' => 'details',
+        'checkbox' => 'checkbox',
+        'tel' => 'tel',
+        'email' => 'email',
+        'captcha' => 'captcha',
+        'fieldset' => 'fieldset',
+        'webform_likert' => 'webform_likert'
+    ];
+}

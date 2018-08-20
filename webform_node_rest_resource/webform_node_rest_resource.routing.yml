@@ -5,9 +5,9 @@ captcha.generate:
   requirements:
     _permission: 'access captcha'
 
-test:
-  path: 'test'
-  defaults:
-    _controller: 'Drupal\webform_node_rest_resource\Controller\CaptchaController::test'
-  requirements:
-    _permission: 'access captcha'
+#test:
+#  path: 'test'
+#  defaults:
+#    _controller: 'Drupal\webform_node_rest_resource\Controller\CaptchaController::test'
+#  requirements:
+#    _permission: 'access captcha'

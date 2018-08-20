@@ -1,0 +1,52 @@
+langcode: zh-hans
+status: true
+dependencies:
+  config:
+    - field.field.base_resource_entity.image.image
+    - image.style.thumbnail
+    - resource_pool.base_resource_entity_type.image
+  module:
+    - image
+id: base_resource_entity.image.default
+targetEntityType: base_resource_entity
+bundle: image
+mode: default
+content:
+  image:
+    weight: 6
+    settings:
+      progress_indicator: throbber
+      preview_image_style: thumbnail
+    third_party_settings: {  }
+    type: image_image
+    region: content
+  langcode:
+    type: language_select
+    weight: 2
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  name:
+    type: string_textfield
+    weight: -4
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  taxonomy:
+    type: options_select
+    weight: 10
+    settings: {  }
+    region: content
+    third_party_settings: {  }
+  user_id:
+    type: entity_reference_autocomplete
+    weight: 5
+    settings:
+      match_operator: CONTAINS
+      size: 60
+      placeholder: ''
+    region: content
+    third_party_settings: {  }
+hidden: {  }

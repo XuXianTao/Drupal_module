@@ -1,0 +1,20 @@
+langcode: zh-hans
+status: true
+dependencies:
+  enforced:
+      module:
+        - webform_template_rest
+  module:
+    - menu_ui
+third_party_settings:
+  menu_ui:
+    available_menus:
+      - main
+    parent: 'main:'
+name: webform_template
+type: webform_template
+description: 'The nodes reference webform templates and add a cover to them.'
+help: ''
+new_revision: null
+preview_mode: 1
+display_submitted: true

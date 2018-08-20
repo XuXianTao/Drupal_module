@@ -1,0 +1,22 @@
+{#
+/**
+ * @file base_resource_entity.html.twig
+ * Default theme implementation to present Base Resource Entity data.
+ *
+ * This template is used when viewing Base Resource Entity pages.
+ *
+ *
+ * Available variables:
+ * - content: A list of content items. Use 'content' to print all content, or
+ * - attributes: HTML attributes for the container element.
+ *
+ * @see template_preprocess_base_resource_entity()
+ *
+ * @ingroup themeable
+ */
+#}
+<div{{ attributes.addClass('base_resource_entity') }}>
+  {% if content %}
+    {{- content -}}
+  {% endif %}
+</div>

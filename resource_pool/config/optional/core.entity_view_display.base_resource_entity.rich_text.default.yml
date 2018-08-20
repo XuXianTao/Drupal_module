@@ -1,0 +1,38 @@
+langcode: zh-hans
+status: true
+dependencies:
+  config:
+    - field.field.base_resource_entity.rich_text.special_text
+    - resource_pool.base_resource_entity_type.rich_text
+  module:
+    - text
+    - user
+id: base_resource_entity.rich_text.default
+targetEntityType: base_resource_entity
+bundle: rich_text
+mode: default
+content:
+  name:
+    label: above
+    type: string
+    weight: -4
+    region: content
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+  special_text:
+    weight: 1
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    type: text_default
+    region: content
+  user_id:
+    label: hidden
+    type: author
+    weight: 0
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+hidden:
+  langcode: true

@@ -1,0 +1,6 @@
+langcode: zh-hans
+status: true
+dependencies: {  }
+id: rich_text
+label: 富文本
+taxonomy: null

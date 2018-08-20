@@ -1,0 +1,8 @@
+langcode: zh-hans
+status: true
+dependencies: {  }
+name: 资源模板
+vid: resource_template
+description: ''
+hierarchy: 1
+weight: 0
