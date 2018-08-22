@@ -1,0 +1,5 @@
+services:
+    customredirect_event_subscriber:
+        class: Drupal\webform_node_rest_with_cover\EventSubscriber\CustomSubscriber
+        tags:
+            - {name: event_subscriber}

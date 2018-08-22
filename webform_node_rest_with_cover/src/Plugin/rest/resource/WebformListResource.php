@@ -106,6 +106,7 @@ class WebformListResource extends ResourceBase {
         /** $status   'open'/ 'closed'/ 'scheduled' */
         $status = $params->get('status', '');
         $search =  $params->get('search', '');
+        $category = $params->get('category');
         $results = [];
         /** @var \Drupal\Core\Database\Connection $db */
         $db = \Drupal::database();
@@ -119,6 +120,15 @@ class WebformListResource extends ResourceBase {
         if (!empty($search)) {
             $query->condition('n.title', '%'. $query->escapeLike($search) . '%', 'LIKE');
         }
+        if (!empty($category)) {
+            $query->leftJoin('node__webform_type', 'wt', 'wt.entity_id = n.nid');
+            $category_query = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->getQuery();
+            $category_id = $category_query->condition('name',$category)
+                ->condition('vid', 'webform_type')
+                ->execute();
+            $category_id = array_values($category_id)[0];
+            $query->condition('wt.webform_type_target_id', $category_id);
+        }
         $query_clone = clone $query;
         $total = $query_clone->countQuery()->execute()->fetchField();
         $query->range($page*$limit, $limit);
@@ -127,6 +137,7 @@ class WebformListResource extends ResourceBase {
         $webforms = Webform::loadMultiple($webform_ids);
         $i = 0;
         foreach ($webforms as $id => $webform) {
+            $result_elements = [];
             _webform_node_rest_with_cover_build_form($result_elements, $webform, $node_ids[$i++]);
             $results[$id] = $result_elements;
         }

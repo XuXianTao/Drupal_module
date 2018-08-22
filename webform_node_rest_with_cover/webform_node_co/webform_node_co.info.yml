@@ -1,0 +1,18 @@
+name: webform_node_cover_type
+type: module
+core: 8.x
+dependencies:
+  - field
+  - file
+  - image
+  - language
+  - node
+  - path
+  - rest
+  - serialization
+  - taxonomy
+  - text
+  - user
+  - views
+  - webform
+  - webform_node_rest_with_cover

@@ -41,12 +41,16 @@ function webform_node_rest_with_cover_help($route_name, RouteMatchInterface $rou
 function _webform_node_rest_with_cover_build_form(&$data, &$webform, $nid = NULL)
 {
     $node = Node::load($nid);
+    if (empty($node)) {return ;}
     $cover = $node->get('webform_cover');
+    $type_id = get_exact_value($node, 'webform_type', 'target_id');
+    $type = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($type_id)->name->value;
     $data = [
         'nid' => $nid,
         'wid' => $webform->id(),
         'title' => get_exact_value($node, 'title'),
         'description' => $webform->getDescription(),
+        'category' => $type,
         'status' => get_exact_value($node, 'webform', 'status'),
         'open_time' => strtotime(get_exact_value($node, 'webform', 'open'))*1000,
         'close_time' => strtotime(get_exact_value($node, 'webform', 'close'))*1000,
@@ -74,7 +78,7 @@ function _webform_node_rest_with_cover_list_encode(&$elements, &$element_result,
     foreach ($elements as $element_key => $element_item) {
         if (!_webform_node_rest_with_cover_is_element_supported($element_item['#type'])) continue;
         if ($element_item['#type'] == 'captcha' && !empty($webform_id)) {
-            $element_item['#default_image_url'] = \Drupal\webform_rest_resource\Controller\CaptchaController::generate(false, $webform_id);
+            $element_item['#default_image_url'] = \Drupal\webform_node_rest_with_cover\Controller\CaptchaController::generate(false, $webform_id);
         }
         if (array_key_exists('#type', $element_item) && !empty($values)) {
             $element_item['#value'] = $values[$element_key];

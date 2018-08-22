@@ -5,9 +5,9 @@ dependencies:
     - field.field.node.webform.body
     - field.field.node.webform.webform
     - field.field.node.webform.webform_cover
+    - field.field.node.webform.webform_type
     - node.type.webform
   module:
-    - image
     - text
     - user
     - webform
@@ -35,14 +35,14 @@ content:
     third_party_settings: {  }
     type: webform_entity_reference_entity_view
     region: content
-  webform_cover:
+  webform_type:
     weight: 103
     label: above
     settings:
-      image_style: ''
-      image_link: ''
+      link: true
     third_party_settings: {  }
-    type: image
+    type: entity_reference_label
     region: content
 hidden:
   langcode: true
+  webform_cover: true
