@@ -1,0 +1,85 @@
+
+the_webform_api_in_wechat.webform_node_api_controller_getWebformApi:
+  path: '/api/webform_node/{nid}'
+  defaults:
+    _controller: '\Drupal\the_webform_api_in_wechat\Controller\WebformNodeApiController::getWebformApi'
+  methods: [GET]
+  requirements:
+    _custom_access: '\Drupal\mini_program\Controller\MpApi::sKeyAccess'
+
+the_webform_api_in_wechat.webform_node_api_controller_getAllWebformApi:
+  path: '/api/webform_node'
+  defaults:
+    _controller: '\Drupal\the_webform_api_in_wechat\Controller\WebformNodeApiController::getAllWebformApi'
+  methods: [GET]
+  requirements:
+    _custom_access: '\Drupal\mini_program\Controller\MpApi::sKeyAccess'
+
+#the_webform_api_in_wechat.webform_node_api_controller_postWebformApi:
+#  path: '/api/webform_node/{nid}'
+#  defaults:
+#    _controller: '\Drupal\the_webform_api_in_wechat\Controller\WebformNodeApiController::postWebformApi'
+#  methods: [POST]
+#  requirements:
+#    _custom_access: '\Drupal\mini_program\Controller\MpApi::sKeyAccess'
+#
+#the_webform_api_in_wechat.webform_node_api_controller_patchWebformApi:
+#  path: '/api/webform_node/{nid}'
+#  defaults:
+#    _controller: '\Drupal\the_webform_api_in_wechat\Controller\WebformNodeApiController::patchWebformApi'
+#  methods: [PATCH]
+#  requirements:
+#    _custom_access: '\Drupal\mini_program\Controller\MpApi::sKeyAccess'
+#
+#the_webform_api_in_wechat.webform_node_api_controller_deleteWebformApi:
+#  path: '/api/webform_node/{nid}'
+#  defaults:
+#    _controller: '\Drupal\the_webform_api_in_wechat\Controller\WebformNodeApiController::deleteWebformApi'
+#  methods: [DELETE]
+#  requirements:
+#    _custom_access: '\Drupal\mini_program\Controller\MpApi::sKeyAccess'
+
+the_webform_api_in_wechat.webform_node_api_controller_getSelectedWebform:
+  path: '/api/webform/shown_page'
+  defaults:
+    _controller: 'Drupal\the_webform_api_in_wechat\Controller\WebformNodeApiController::getSelectedWebform'
+  methods: [GET]
+  requirements:
+    _custom_access: '\Drupal\mini_program\Controller\MpApi::sKeyAccess'
+
+the_webform_api_in_wechat.webform_node_api_controller_getQRCode:
+  path: '/node/{nid}/qrcode'
+  defaults:
+    _controller: 'Drupal\the_webform_api_in_wechat\Controller\WebformNodeApiController::getQRCode'
+  methods: [GET]
+  requirements:
+    _permission: 'access administration pages'
+
+
+the_webform_api_in_wechat.captcha.generate:
+  path: '/api/webform/captcha/generate/{webform_id}'
+  defaults:
+    _controller: 'Drupal\the_webform_api_in_wechat\Controller\CaptchaController::generate'
+  methods: [GET]
+  requirements:
+    _custom_access: '\Drupal\mini_program\Controller\MpApi::sKeyAccess'
+
+the_webform_api_in_wechat.webform_submission_controller_postSubmission:
+  path: '/api/webform/{id}/submission'
+  defaults:
+    _controller: 'Drupal\the_webform_api_in_wechat\Controller\WebformSubmissionController::postSubmission'
+  methods: [POST]
+  requirements:
+    _custom_access: '\Drupal\mini_program\Controller\MpApi::sKeyAccess'
+
+
+the_webform_api_in_wechat.webform_shown_form:
+  path: '/manage/webformshown'
+  defaults:
+    _form: '\Drupal\the_webform_api_in_wechat\Form\WebformShownForm'
+    _title: 'Promoted Form'
+  requirements:
+    _permission: 'access administration pages'
+  options:
+    _admin_route: TRUE
+

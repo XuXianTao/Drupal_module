@@ -1,0 +1,11 @@
+name: The Webform Api in Wechat
+type: module
+description: A restful api using wechat auth, and providing some api for webform node <span style='color:red;'>with a cover and taxonomy.</span>
+core: 8.x
+package: Custom
+dependencies:
+  - mini_program
+  - image_captcha
+  - statistics
+libraries:
+  - the_webform_api_in_wechat/ccms-sidebar-patched-styling

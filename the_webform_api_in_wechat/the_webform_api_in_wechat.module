@@ -1,0 +1,252 @@
+<?php
+
+/**
+ * @file
+ * Contains the_webform_api_in_wechat.module.
+ */
+
+use Drupal\Core\Database\Database;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\node\Entity\Node;
+use Drupal\webform\Entity\Webform;
+
+define('WEBFORM_NODE_HELPER', __DIR__ . '/webform_node_helper.php');
+define('FIELD_SETTING_ALLOW', [
+    'element',
+    'type',
+    'key',
+    'options',
+    'validation',
+    'form'
+]);
+define('FILED_SETTING_ALLOW_FORM', [
+    'placeholder'
+]);
+define('STATUS', [
+    'open' => '正在进行',
+    'closed' => '未开放',
+    'scheduled' => ''
+]);
+require_once WEBFORM_NODE_HELPER;
+/**
+ * Implements hook_help().
+ */
+function the_webform_api_in_wechat_help($route_name, RouteMatchInterface $route_match)
+{
+    switch ($route_name) {
+        // Main module help for the the_webform_api_in_wechat module.
+        case 'help.page.the_webform_api_in_wechat':
+            $output = '';
+            $output .= '<h3>' . t('About') . '</h3>';
+            $output .= '<p>' . t('A restful api using wechat auth, and providing some api for webform node &lt;span color=&quot;red&quot;&gt;with a cover and taxonomy.&lt;/span&gt;') . '</p>';
+            return $output;
+
+        default:
+    }
+}
+
+function the_webform_api_in_wechat_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
+{
+    switch ($form_id) {
+        // 去除添加表单时候的额外内容
+        case 'webform_add_form': {
+            $form['description'] = [];
+            $form['category'] = [];
+            $form['status'] = [];
+            break;
+        }
+        // 去除限定内容外的字段配置
+        case 'webform_ui_element_type_select_form': {
+            foreach($form as $k => $item) {
+                if (is_numeric($k) && !empty($item['#type']) && $item['#type'] === 'details') {
+                    $elements_count = 0;
+                    foreach ($item['elements'] as $field_name=> $field_value) {
+                        if (substr($field_name, 0, 1) === '#') continue;
+                        if (in_array($field_name, _the_webform_api_in_wechat_supported_elements())) {
+                            $elements_count++;
+                        } else {
+                            unset($form[$k]['elements'][$field_name]);
+                        }
+                    }
+                    if ($elements_count == 0) {
+                        unset($form[$k]);
+                    }
+                }
+            }
+            break;
+        }
+
+        case 'webform_ui_element_form': {
+            if (!empty($form['properties'])) {
+                if (!empty($form['properties']['element']) && !empty($form['properties']['form'])) {
+                    foreach($form['properties'] as $k => $pro_item) {
+                        if (substr($k, 0, 1) === '#') continue;
+                        if (!in_array($k,FIELD_SETTING_ALLOW)) {
+                            unset($form['properties'][$k]);
+                        } else if ($k === 'form') {
+                            $item_form = $form['properties']['form'];
+                            foreach($item_form as $item_form_k => $item_form_v) {
+                                if (!in_array($item_form_k, FILED_SETTING_ALLOW_FORM)) {
+                                    unset($form['properties']['form'][$item_form_k]);
+                                }
+                            }
+                        }
+                    }
+                    if (!empty($form['properties']['element']['multiple'])) {
+                        unset($form['properties']['element']['multiple']);
+                    }
+                }
+            }
+            break;
+        }
+        default: break;
+    }
+    return $form;
+}
+
+function the_webform_api_in_wechat_preprocess_page(&$variables) {
+    $variables['#attached']['library'][] = 'the_webform_api_in_wechat/ccms-sidebar-patched-styling';
+}
+/**
+ * Helper Function used in webform rest resource
+ */
+/**
+ * @param $data
+ * @param $webform Webform
+ * @param $nid
+ */
+function _the_webform_api_in_wechat_build_form(&$data, &$webform, $nid = NULL)
+{
+    $node = Node::load($nid);
+    if (empty($node)) {
+        return;
+    }
+    $cover = $node->get('webform_cover');
+    $type_id = get_exact_value($node, 'webform_type', 'target_id');
+    $type = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($type_id)->name->value;
+    $status = get_exact_value($node, 'webform', 'status');
+    $cover_status = STATUS[$status];
+    $open_time = strtotime(get_exact_value($node, 'webform', 'open'));
+    $close_time = strtotime(get_exact_value($node, 'webform', 'close'));
+    //dump($open_time, $nid);
+    if ($cover_status === '') {
+        $cover_status = (time() > $close_time) ? '已过期' : ((time() < $open_time) ? '未开始' : '正在进行');
+    }
+    $data = [
+        'nid' => $nid,
+        'wid' => $webform->id(),
+        'title' => get_exact_value($node, 'title'),
+        'description' => strip_tags(get_exact_value($node, 'body', 'value')),
+        'category' => $type,
+        'status' => $status,
+        'open_time' => $open_time * 1000,
+        'close_time' => $close_time * 1000,
+        'cover_status' => $cover_status,
+        'created' => $node->getCreatedTime(),
+        'cover_img' => $cover->entity->uri->value ? file_create_url($cover->entity->uri->value) : null,
+        'settings' => [],
+        'elements' => []
+    ];
+
+    $limit_total = $webform->getSetting('limit_total'); //限制提交次数
+    $query = Database::getConnection()->select('webform_submission', 'ws')
+        ->condition('ws.webform_id', $webform->id());
+    $have_submit = $query->countQuery()->execute()->fetchField(); //已提交次数
+    $data['settings'] = [
+        'limit_total' => $limit_total,
+        'have_submited' => (integer)$have_submit
+    ];
+
+    $elements = $webform->getElementsDecoded();
+    _the_webform_api_in_wechat_list_encode($elements, $data['elements'], $webform->id());
+
+}
+
+function _the_webform_api_in_wechat_list_encode(&$elements, &$element_result, $webform_id = NULL, $values = [])
+{
+    foreach ($elements as $element_key => $element_item) {
+        if (!_the_webform_api_in_wechat_is_element_supported($element_item['#type'])) continue;
+        if ($element_item['#type'] == 'captcha' && !empty($webform_id)) {
+            $element_item['#default_image_url'] = \Drupal\webform_rest_resource\Controller\CaptchaController::generate(false, $webform_id);
+        }
+        if (array_key_exists('#type', $element_item) && !empty($values)) {
+            $element_item['#value'] = $values[$element_key];
+        }
+        foreach ($element_item as $k => $v) {
+            if (substr($k, 0, 1) === '#') {
+                $element_result[$element_key][ltrim($k, '#')] = $v;
+            } else {
+                if (empty($element_result[$element_key]['children'])) $element_result[$element_key]['children'] = [];
+                $child_element = [$k => $v];
+                _the_webform_api_in_wechat_list_encode($child_element, $element_result[$element_key]['children'], $webform_id, $values);
+            }
+        }
+    }
+}
+
+function _the_webform_api_in_wechat_list_decode(&$input, &$output)
+{
+    foreach ($input as $element_key => $element_item) {
+        if (empty($output[$element_key])) $output[$element_key] = [];
+        foreach ($element_item as $k => $v) {
+            if ($k == 'children') {
+                _the_webform_api_in_wechat_list_decode($v, $output[$element_key]);
+                continue;
+            } else {
+                $k = '#' . $k;
+                $output[$element_key][$k] = $v;
+            }
+        }
+    }
+}
+
+function _the_webform_api_in_wechat_is_element_supported($element_type)
+{
+    $supported_elements = _the_webform_api_in_wechat_supported_elements();
+    return array_key_exists($element_type, $supported_elements);
+}
+
+function _the_webform_api_in_wechat_supported_elements()
+{
+    return [
+        'textfield' => 'textfield',
+        'textarea' => 'textarea',
+        'checkboxes' => 'checkboxes',
+        'radios' => 'radios',
+        'details' => 'details',
+    ];
+}
+
+/**
+ * @param $k
+ * @param $submission \Drupal\webform\WebformSubmissionInterface
+ * @param $sub_data
+ * @param $basic_data
+ */
+function _the_webform_api_in_wechat_submission_data($k, &$submission, &$sub_data, &$basic_data, $only_id = false, $only_value = true)
+{
+    $webform = $submission->getWebform();
+
+    if (!$only_id) {
+        $values = $submission->getData();
+        if ($only_value) {
+            $sub_data = $values;
+        } else {
+            $elements = $webform->getElementsDecoded();
+            _the_webform_api_in_wechat_list_encode($elements, $sub_data, null, $values);
+        }
+    }
+    $basic_data = [
+        'sid' => $k,
+        'title' => $webform->get('title'),
+        'created' => $submission->getCreatedTime(),
+        'completed' => $submission->getCompletedTime(),
+        'changed' => $submission->getChangedTime(),
+        //'current_page' => $submission->getCurrentPage(),
+        //'remote_addr' => $submission->getRemoteAddr(),
+        'uid' => $submission->getOwnerId(),
+        //'locked' => $submission->isLocked(),
+        //'sticky' => $submission->isSticky(),
+        //'in_draft' => $submission->isDraft(),
+    ];
+}

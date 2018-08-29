@@ -1,0 +1,7 @@
+the_webform_api_in_wechat.webform_shown_form:
+  title: 'Promoted Form'
+  route_name: the_webform_api_in_wechat.webform_shown_form
+  description: '选择开屏时候显示的表单问卷'
+  parent: manage
+  weight: 99
+

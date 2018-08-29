@@ -1,0 +1,22 @@
+langcode: zh-hans
+status: true
+dependencies:
+  config:
+    - field.storage.node.webform_shown_page
+    - node.type.webform
+id: node.webform.webform_shown_page
+field_name: webform_shown_page
+entity_type: node
+bundle: webform
+label: webform_shown_page
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: 0
+default_value_callback: ''
+settings:
+  on_label: 'On'
+  off_label: 'Off'
+field_type: boolean

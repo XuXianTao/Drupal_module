@@ -1,0 +1,27 @@
+langcode: zh-hans
+status: true
+dependencies:
+  config:
+    - field.storage.node.webform_type
+    - node.type.webform
+    - taxonomy.vocabulary.webform_type
+id: node.webform.webform_type
+field_name: webform_type
+entity_type: node
+bundle: webform
+label: webform_type
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      webform_type: webform_type
+    sort:
+      field: _none
+    auto_create: false
+    auto_create_bundle: ''
+field_type: entity_reference

@@ -1,0 +1,8 @@
+entity.the_webform_api_in_wechat.add_form:
+  route_name: node.add
+  route_parameters:
+    node_type: 'webform'
+  title: '新建问卷'
+  appears_on:
+    - view.wenform_list.page_1
+

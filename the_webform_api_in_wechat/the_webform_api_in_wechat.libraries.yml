@@ -1,0 +1,5 @@
+ccms-sidebar-patched-styling:
+  version: 1.x
+  css:
+    theme:
+      css/sidebar.css: {}

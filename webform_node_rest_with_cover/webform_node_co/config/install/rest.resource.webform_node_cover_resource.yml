@@ -1,0 +1,20 @@
+langcode: zh-hans
+status: true
+dependencies:
+  module:
+    - serialization
+    - user
+    - webform_node_rest_with_cover
+id: webform_node_cover_resource
+plugin_id: webform_node_cover_resource
+granularity: resource
+configuration:
+  methods:
+    - GET
+    - POST
+    - DELETE
+    - PATCH
+  formats:
+    - json
+  authentication:
+    - cookie

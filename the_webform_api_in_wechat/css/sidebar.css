@@ -1,0 +1,11 @@
+.sidebar.transition {
+    overflow: auto;
+}
+.sidebar-hide.transition {
+    overflow: visible;
+}
+.sidebar.transition::-webkit-scrollbar
+{
+    display: none;
+    width: 0;
+}
